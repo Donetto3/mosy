@@ -2,264 +2,147 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>KRAKINS: Костя Соколов</title>
+  <title>Krakins™ Steam Аккаунт</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      overflow: hidden;
-      font-family: 'Arial', sans-serif;
-      background: #000022;
-      color: white;
+      background: linear-gradient(135deg, #000011, #001f33);
+      font-family: 'Courier New', monospace;
+      color: #00ffff;
+      overflow-x: hidden;
     }
 
-    canvas {
-      display: block;
-      margin: auto;
-      background: radial-gradient(#001f33, #000);
-      border: 4px solid cyan;
-    }
-
-    #menu {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.85);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-
-    #menu h1 {
-      font-size: 48px;
-      margin-bottom: 30px;
-      text-shadow: 0 0 10px cyan;
-    }
-
-    #startBtn {
-      font-size: 24px;
-      padding: 15px 40px;
-      border: none;
-      background-color: cyan;
-      color: black;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.2s;
-    }
-
-    #startBtn:hover {
-      background-color: white;
-    }
-
-    #score, #game-over {
-      position: absolute;
-      font-size: 20px;
-      z-index: 5;
-    }
-
-    #score {
-      top: 10px;
-      left: 10px;
-    }
-
-    #game-over {
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 36px;
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
       text-align: center;
-      display: none;
     }
 
-    #restartBtn {
-      margin-top: 20px;
-      padding: 10px 30px;
+    h1 {
+      font-size: 48px;
+      color: #ff00ff;
+      text-shadow: 0 0 10px #00ffff;
+      animation: glow 2s infinite alternate;
+    }
+
+    p {
       font-size: 18px;
-      background-color: cyan;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+      line-height: 1.6;
+      color: #ccc;
     }
 
+    .price {
+      font-size: 32px;
+      margin: 30px 0;
+      color: #00ffcc;
+      text-shadow: 0 0 5px #fff;
+    }
+
+    .btn-buy {
+      background: #ff00ff;
+      color: black;
+      padding: 15px 40px;
+      font-size: 24px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: pulse 1.2s infinite;
+    }
+
+    .btn-buy:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 20px #ff00ff;
+    }
+
+    .features {
+      margin-top: 50px;
+      text-align: left;
+      color: #99ffff;
+      background: rgba(0,255,255,0.05);
+      border-left: 4px solid #ff00ff;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .features li {
+      margin-bottom: 12px;
+    }
+
+    .footer {
+      margin-top: 60px;
+      font-size: 14px;
+      color: #555;
+      font-style: italic;
+    }
+
+    @keyframes glow {
+      0% { text-shadow: 0 0 10px #ff00ff; }
+      100% { text-shadow: 0 0 20px #00ffff; }
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 10px #ff00ff; }
+      100% { box-shadow: 0 0 20px #00ffff; }
+    }
+
+    .tentacle {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      background: url('https://i.imgur.com/BbJXKUx.png') no-repeat center center;
+      background-size: contain;
+      animation: floaty 5s infinite ease-in-out;
+      opacity: 0.3;
+    }
+
+    .tentacle:nth-child(odd) {
+      animation-duration: 7s;
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
   </style>
 </head>
 <body>
 
-  <div id="menu">
-    <h1>KRAKINS: Костя Соколов</h1>
-    <button id="startBtn">Играть</button>
+  <!-- Щупальца -->
+  <div class="tentacle" style="top: 30px; left: 10px;"></div>
+  <div class="tentacle" style="top: 80px; right: 10px;"></div>
+  <div class="tentacle" style="bottom: 30px; left: 30px;"></div>
+  <div class="tentacle" style="bottom: 50px; right: 40px;"></div>
+
+  <div class="container">
+    <h1>Krakins™</h1>
+    <p><strong>Устал от скучных аккаунтов?</strong>  
+    <br>Покупая **этот Steam-аккаунт**, ты получаешь **не просто библиотеку игр, а паспорт в подводное братство!**</p>
+
+    <div class="price">💸 20 000 рублей</div>
+
+    <button class="btn-buy" onclick="alert('Поздравляем! Ваш запрос принят Кракеном Костей. Он уже выехал. Медленно, но выехал.')">
+      Купить (без возврата)
+    </button>
+
+    <div class="features">
+      <ul>
+        <li>🎮 300+ игр, включая **Half-Life: Tentacle Edition**</li>
+        <li>🧠 Инвентарь на 20 рублей (эмоциональная ценность!)</li>
+        <li>🐙 Никнейм: <code>krakins_228_xx</code></li>
+        <li>🗿 Достижение "Выход из воды — 1 раз"</li>
+        <li>📉 VAC-бан? Нет. VAC-БЛАГОСЛОВЕНИЕ!</li>
+        <li>🪙 Бонус: картинка с Костей в шляпе</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      * После покупки аккаунт будет доставлен лично Костей. Срок доставки: от 3 до 97 лет.  
+      <br>Все сделки происходят на глубине 20 000 метров.
+    </div>
   </div>
-
-  <canvas id="gameCanvas" width="800" height="600"></canvas>
-  <div id="score">Счёт: 0</div>
-
-  <div id="game-over">
-    <div>💀 Игра окончена!</div>
-    <button id="restartBtn">Играть снова</button>
-  </div>
-
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    const menu = document.getElementById('menu');
-    const startBtn = document.getElementById('startBtn');
-    const gameOverScreen = document.getElementById('game-over');
-    const restartBtn = document.getElementById('restartBtn');
-    const scoreEl = document.getElementById('score');
-
-    let player, keys, torpedoes, bonuses, score, gameOver, frame;
-
-    function initGame() {
-      player = {
-        x: 400,
-        y: 300,
-        size: 25,
-        speed: 4,
-        color: 'lime'
-      };
-
-      keys = {};
-      torpedoes = [];
-      bonuses = [];
-      score = 0;
-      gameOver = false;
-      frame = 0;
-
-      gameOverScreen.style.display = 'none';
-      scoreEl.textContent = "Счёт: 0";
-      animate();
-    }
-
-    startBtn.onclick = () => {
-      menu.style.display = 'none';
-      initGame();
-    };
-
-    restartBtn.onclick = () => {
-      initGame();
-    };
-
-    document.addEventListener('keydown', e => keys[e.key] = true);
-    document.addEventListener('keyup', e => keys[e.key] = false);
-
-    function drawPlayer() {
-      ctx.fillStyle = player.color;
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    function movePlayer() {
-      if (keys['ArrowLeft'] && player.x - player.size > 0) player.x -= player.speed;
-      if (keys['ArrowRight'] && player.x + player.size < canvas.width) player.x += player.speed;
-      if (keys['ArrowUp'] && player.y - player.size > 0) player.y -= player.speed;
-      if (keys['ArrowDown'] && player.y + player.size < canvas.height) player.y += player.speed;
-    }
-
-    function spawnTorpedo() {
-      const dir = Math.floor(Math.random() * 4);
-      const speed = 2 + score / 100;
-      let t = { x: 0, y: 0, dx: 0, dy: 0, size: 20, speed: speed };
-
-      switch (dir) {
-        case 0: t.x = 0; t.y = Math.random() * canvas.height; t.dx = 1; break;
-        case 1: t.x = canvas.width; t.y = Math.random() * canvas.height; t.dx = -1; break;
-        case 2: t.x = Math.random() * canvas.width; t.y = 0; t.dy = 1; break;
-        case 3: t.x = Math.random() * canvas.width; t.y = canvas.height; t.dy = -1; break;
-      }
-
-      torpedoes.push(t);
-    }
-
-    function drawTorpedoes() {
-      ctx.fillStyle = 'red';
-      for (let t of torpedoes) {
-        ctx.beginPath();
-        ctx.rect(t.x, t.y, t.size, t.size);
-        ctx.fill();
-      }
-    }
-
-    function moveTorpedoes() {
-      for (let t of torpedoes) {
-        t.x += t.dx * t.speed;
-        t.y += t.dy * t.speed;
-      }
-    }
-
-    function checkCollision() {
-      for (let t of torpedoes) {
-        const dist = Math.hypot(player.x - t.x, player.y - t.y);
-        if (dist < player.size + t.size / 2) {
-          gameOver = true;
-          gameOverScreen.style.display = 'block';
-        }
-      }
-    }
-
-    function spawnBonus() {
-      if (Math.random() < 0.01) {
-        bonuses.push({
-          x: Math.random() * (canvas.width - 20) + 10,
-          y: Math.random() * (canvas.height - 20) + 10,
-          size: 10
-        });
-      }
-    }
-
-    function drawBonuses() {
-      ctx.fillStyle = 'yellow';
-      for (let b of bonuses) {
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    function checkBonus() {
-      for (let i = bonuses.length - 1; i >= 0; i--) {
-        const b = bonuses[i];
-        const dist = Math.hypot(player.x - b.x, player.y - b.y);
-        if (dist < player.size + b.size) {
-          score += 10;
-          bonuses.splice(i, 1);
-        }
-      }
-    }
-
-    function updateScore() {
-      scoreEl.textContent = 'Счёт: ' + score;
-    }
-
-    function animate() {
-      if (gameOver) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      movePlayer();
-      drawPlayer();
-
-      if (frame % 60 === 0) spawnTorpedo();
-      moveTorpedoes();
-      drawTorpedoes();
-
-      spawnBonus();
-      drawBonuses();
-      checkBonus();
-
-      checkCollision();
-      updateScore();
-
-      frame++;
-      score += 1;
-
-      requestAnimationFrame(animate);
-    }
-  </script>
 
 </body>
 </html>
