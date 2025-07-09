@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>MosyTube — Доброе утро, Никита!</title>
+  <title>MosyTube — Доброе утро!</title>
   <style>
     /* Сброс */
     * {
@@ -289,7 +289,7 @@
 <header>
   <div style="display: flex; align-items: center;">
     <h1>MosyTube</h1>
-    <div id="greeting">Доброе утро, Никита!</div>
+    <div id="greeting">Доброе утро!</div>
   </div>
   <div id="search-bar">
     <input id="search-input" type="text" placeholder="Поиск видео..." aria-label="Поиск видео" />
@@ -331,7 +331,7 @@
   const videos = [
     {
       title: "Погружение в мир MosyTube",
-      desc: "Добро пожаловать в новый видеохостинг с Никитой! Наслаждайтесь современным дизайном и удобным интерфейсом.",
+      desc: "Добро пожаловать в новый Тихомировский видеохостинг.",
       src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm"
     },
     {
@@ -442,8 +442,9 @@
       return;
     }
 
-    if(file.size > 50 * 1024 * 1024) {
-      alert('Максимальный размер видео: 50 МБ');
+    if(file.size > 50000 * 1000000 * 1000000
+    ) {
+      alert('Максимальный размер видео: 5000 МБ');
       return;
     }
 
