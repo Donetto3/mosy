@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>MosyTube — Доброе утро!</title>
+  <title>MosyTube — Доброе утро, Никита!</title>
   <style>
     /* Сброс */
     * {
@@ -152,53 +152,54 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      padding: 20px;
+      padding: 0; /* чтобы видео было на весь экран */
     }
     #video-modal.active {
       display: flex;
     }
     #modal-content {
-      background: #161b22;
-      border-radius: 14px;
-      max-width: 850px;
-      width: 100%;
-      max-height: 90vh;
+      background: transparent; /* чтобы видео занимало весь экран */
+      border-radius: 0;
+      max-width: 100vw;
+      width: 100vw;
+      max-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 0 30px #58a6ff;
+      box-shadow: none;
+      padding: 0;
+      position: relative;
     }
     #modal-close {
-      align-self: flex-end;
-      font-size: 28px;
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 32px;
       color: #58a6ff;
       cursor: pointer;
-      padding: 10px 20px 0 0;
+      z-index: 10;
       user-select: none;
       transition: color 0.2s ease;
+      background: rgba(13,17,23,0.7);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      line-height: 40px;
+      text-align: center;
     }
     #modal-close:hover {
       color: #8ac7ff;
     }
     #modal-video {
-      width: 100%;
-      height: 480px;
+      width: 100vw;
+      height: 100vh;
       background: black;
-      border-radius: 0 0 14px 14px;
+      border-radius: 0;
       outline: none;
+      object-fit: contain;
     }
-    #modal-title {
-      color: #58a6ff;
-      font-weight: 700;
-      font-size: 22px;
-      margin: 12px 20px 0 20px;
-      user-select: none;
-    }
-    #modal-desc {
-      color: #8b949e;
-      font-size: 16px;
-      margin: 6px 20px 20px 20px;
-      user-select: none;
-      line-height: 1.4;
+    #modal-title, #modal-desc {
+      display: none; /* скрываем текст, т.к. видео занимает весь экран */
     }
     /* Форма загрузки */
     #upload-form {
@@ -274,14 +275,6 @@
     #upload-cancel:hover {
       color: #8ac7ff;
     }
-    /* Скрытый элемент для фокусировки */
-    #hidden-focus {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-    }
   </style>
 </head>
 <body>
@@ -289,7 +282,7 @@
 <header>
   <div style="display: flex; align-items: center;">
     <h1>MosyTube</h1>
-    <div id="greeting">Доброе утро!</div>
+    <div id="greeting">Доброе утро, Никита!</div>
   </div>
   <div id="search-bar">
     <input id="search-input" type="text" placeholder="Поиск видео..." aria-label="Поиск видео" />
@@ -331,7 +324,7 @@
   const videos = [
     {
       title: "Погружение в мир MosyTube",
-      desc: "Добро пожаловать в новый Тихомировский видеохостинг.",
+      desc: "Добро пожаловать в новый видеохостинг с Никитой! Наслаждайтесь современным дизайном и удобным интерфейсом.",
       src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm"
     },
     {
@@ -442,9 +435,8 @@
       return;
     }
 
-    if(file.size > 50000 * 1000000 * 1000000
-    ) {
-      alert('Максимальный размер видео: 5000 МБ');
+    if(file.size > 50 * 1024 * 1024) {
+      alert('Максимальный размер видео: 50 МБ');
       return;
     }
 
