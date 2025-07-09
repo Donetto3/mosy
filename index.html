@@ -1,281 +1,122 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>MosyTube — Доброе утро, Никита!</title>
-  <style>
-    /* Сброс */
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-      color: #c9d1d9;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    header {
-      background: #161b22;
-      padding: 16px 32px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid #30363d;
-      flex-shrink: 0;
-    }
-    header h1 {
-      margin: 0;
-      font-weight: 700;
-      font-size: 26px;
-      color: #58a6ff;
-      user-select: none;
-      cursor: default;
-    }
-    #greeting {
-      font-size: 16px;
-      color: #8b949e;
-      user-select: none;
-      margin-left: 12px;
-      font-weight: 500;
-    }
-    #search-bar {
-      flex: 1;
-      max-width: 450px;
-      margin: 0 24px;
-      position: relative;
-    }
-    #search-input {
-      width: 100%;
-      padding: 10px 18px;
-      border-radius: 9999px;
-      border: none;
-      font-size: 15px;
-      outline: none;
-      background: #0d1117;
-      color: #c9d1d9;
-      box-shadow: inset 0 0 6px #21262d;
-      transition: background-color 0.3s ease;
-    }
-    #search-input::placeholder {
-      color: #8b949e;
-    }
-    #search-input:focus {
-      background-color: #161b22;
-      box-shadow: 0 0 8px #58a6ff;
-    }
-    #upload-btn {
-      background: #238636;
-      border: none;
-      color: white;
-      padding: 10px 24px;
-      border-radius: 9999px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      flex-shrink: 0;
-      user-select: none;
-    }
-    #upload-btn:hover {
-      background: #2ea043;
-    }
-    main {
-      flex-grow: 1;
-      padding: 24px 32px;
-      background: #0d1117;
-      display: grid;
-      grid-template-columns: repeat(auto-fill,minmax(280px,1fr));
-      gap: 20px;
-      overflow-y: auto;
-      min-height: 0; /* важно для flex-колонки */
-    }
-    .video-card {
-      background: #161b22;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 0 8px #22272e inset;
-      display: flex;
-      flex-direction: column;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.3s ease;
-      user-select: none;
-    }
-    .video-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 8px 20px #58a6ff;
-    }
-    video {
-      width: 100%;
-      height: 160px;
-      object-fit: cover;
-      background: black;
-      border-bottom: 1px solid #30363d;
-      border-radius: 12px 12px 0 0;
-      pointer-events: none; /* чтобы клик шёл на карточку */
-    }
-    .video-info {
-      padding: 12px 16px;
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .video-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #58a6ff;
-      margin: 0 0 8px 0;
-      line-height: 1.2;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .video-desc {
-      font-size: 14px;
-      color: #8b949e;
-      line-height: 1.3;
-      flex-grow: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      display: -webkit-box;
-      -webkit-line-clamp: 3;
-      -webkit-box-orient: vertical;
-    }
-    /* Модальное окно */
-    #video-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(13,17,23,0.95);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      padding: 0; /* чтобы видео было на весь экран */
-    }
-    #video-modal.active {
-      display: flex;
-    }
-    #modal-content {
-      background: transparent; /* чтобы видео занимало весь экран */
-      border-radius: 0;
-      max-width: 100vw;
-      width: 100vw;
-      max-height: 100vh;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      box-shadow: none;
-      padding: 0;
-      position: relative;
-    }
-    #modal-close {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      font-size: 32px;
-      color: #58a6ff;
-      cursor: pointer;
-      z-index: 10;
-      user-select: none;
-      transition: color 0.2s ease;
-      background: rgba(13,17,23,0.7);
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      line-height: 40px;
-      text-align: center;
-    }
-    #modal-close:hover {
-      color: #8ac7ff;
-    }
-    #modal-video {
-      width: 100vw;
-      height: 100vh;
-      background: black;
-      border-radius: 0;
-      outline: none;
-      object-fit: contain;
-    }
-    #modal-title, #modal-desc {
-      display: none; /* скрываем текст, т.к. видео занимает весь экран */
-    }
-    /* Форма загрузки */
-    #upload-form {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: #161b22;
-      padding: 30px;
-      border-radius: 14px;
-      max-width: 400px;
-      width: 90%;
-      box-shadow: 0 0 30px #238636;
-      display: none;
-      flex-direction: column;
-      z-index: 10000;
-    }
-    #upload-form.active {
-      display: flex;
-    }
-    #upload-form label {
-      font-weight: 600;
-      margin-bottom: 6px;
-      color: #58a6ff;
-      user-select: none;
-    }
-    #upload-form input[type="text"],
-    #upload-form textarea,
-    #upload-form input[type="file"] {
-      width: 100%;
-      margin-bottom: 16px;
-      padding: 10px 14px;
-      font-size: 15px;
-      border-radius: 8px;
-      border: none;
-      background: #0d1117;
-      color: #c9d1d9;
-      resize: none;
-      box-shadow: inset 0 0 6px #21262d;
-      outline: none;
-      transition: background-color 0.3s ease;
-    }
-    #upload-form input[type="text"]:focus,
-    #upload-form textarea:focus,
-    #upload-form input[type="file"]:focus {
-      background-color: #161b22;
-      box-shadow: 0 0 8px #58a6ff;
-    }
-    #upload-submit {
-      background: #238636;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 12px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      user-select: none;
-    }
-    #upload-submit:hover {
-      background: #2ea043;
-    }
-    #upload-cancel {
-      margin-top: 12px;
-      background: transparent;
-      border: none;
-      color: #58a6ff;
-      cursor: pointer;
-      font-weight: 700;
-      user-select: none;
-      transition: color 0.3s ease;
-    }
-    #upload-cancel:hover {
-      color: #8ac7ff;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>MosyTube с IndexedDB — Доброе утро, Никита!</title>
+<style>
+  body {
+    margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    color: #c9d1d9; min-height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    background: #161b22; padding: 16px 32px; display: flex; align-items: center;
+    justify-content: space-between; border-bottom: 1px solid #30363d; flex-shrink: 0;
+  }
+  header h1 { margin: 0; font-weight: 700; font-size: 26px; color: #58a6ff; user-select: none; cursor: default; }
+  #greeting { font-size: 16px; color: #8b949e; user-select: none; margin-left: 12px; font-weight: 500; }
+  #search-bar { flex: 1; max-width: 450px; margin: 0 24px; position: relative; }
+  #search-input {
+    width: 100%; padding: 10px 18px; border-radius: 9999px; border: none; font-size: 15px;
+    outline: none; background: #0d1117; color: #c9d1d9; box-shadow: inset 0 0 6px #21262d;
+    transition: background-color 0.3s ease;
+  }
+  #search-input::placeholder { color: #8b949e; }
+  #search-input:focus { background-color: #161b22; box-shadow: 0 0 8px #58a6ff; }
+  #upload-btn {
+    background: #238636; border: none; color: white; padding: 10px 24px; border-radius: 9999px;
+    font-weight: 600; cursor: pointer; transition: background-color 0.3s ease; flex-shrink: 0; user-select: none;
+  }
+  #upload-btn:hover { background: #2ea043; }
+  main {
+    flex-grow: 1; padding: 24px 32px; background: #0d1117;
+    display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr));
+    gap: 20px; overflow-y: auto; min-height: 0;
+  }
+  .video-card {
+    background: #161b22; border-radius: 12px; overflow: hidden;
+    box-shadow: 0 0 8px #22272e inset; display: flex; flex-direction: column;
+    cursor: pointer; transition: transform 0.2s ease, box-shadow 0.3s ease; user-select: none;
+  }
+  .video-card:hover {
+    transform: translateY(-6px); box-shadow: 0 8px 20px #58a6ff;
+  }
+  video {
+    width: 100%; height: 160px; object-fit: cover; background: black;
+    border-bottom: 1px solid #30363d; border-radius: 12px 12px 0 0; pointer-events: none;
+  }
+  .video-info {
+    padding: 12px 16px; flex-grow: 1; display: flex; flex-direction: column; justify-content: center;
+  }
+  .video-title {
+    font-size: 16px; font-weight: 700; color: #58a6ff; margin: 0 0 8px 0;
+    line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .video-desc {
+    font-size: 14px; color: #8b949e; line-height: 1.3; flex-grow: 1;
+    overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
+    -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  }
+  /* Модальное окно */
+  #video-modal {
+    position: fixed; inset: 0; background: rgba(13,17,23,0.95); display: none;
+    align-items: center; justify-content: center; z-index: 9999; padding: 0;
+  }
+  #video-modal.active { display: flex; }
+  #modal-content {
+    background: transparent; border-radius: 0; max-width: 100vw; width: 100vw;
+    max-height: 100vh; height: 100vh; display: flex; flex-direction: column;
+    box-shadow: none; padding: 0; position: relative;
+  }
+  #modal-close {
+    position: absolute; top: 10px; right: 15px; font-size: 32px; color: #58a6ff;
+    cursor: pointer; z-index: 10; user-select: none; transition: color 0.2s ease;
+    background: rgba(13,17,23,0.7); border-radius: 50%; width: 40px; height: 40px;
+    line-height: 40px; text-align: center;
+  }
+  #modal-close:hover { color: #8ac7ff; }
+  #modal-video {
+    width: 100vw; height: 100vh; background: black; border-radius: 0; outline: none;
+    object-fit: contain;
+  }
+
+  /* Форма загрузки */
+  #upload-form {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #161b22; padding: 30px; border-radius: 14px; max-width: 400px;
+    width: 90%; box-shadow: 0 0 30px #238636; display: none; flex-direction: column;
+    z-index: 10000;
+  }
+  #upload-form.active { display: flex; }
+  #upload-form label {
+    font-weight: 600; margin-bottom: 6px; color: #58a6ff; user-select: none;
+  }
+  #upload-form input[type="text"],
+  #upload-form textarea,
+  #upload-form input[type="file"] {
+    width: 100%; margin-bottom: 16px; padding: 10px 14px; font-size: 15px;
+    border-radius: 8px; border: none; background: #0d1117; color: #c9d1d9;
+    resize: none; box-shadow: inset 0 0 6px #21262d; outline: none;
+    transition: background-color 0.3s ease;
+  }
+  #upload-form input[type="text"]:focus,
+  #upload-form textarea:focus,
+  #upload-form input[type="file"]:focus {
+    background-color: #161b22; box-shadow: 0 0 8px #58a6ff;
+  }
+  #upload-submit {
+    background: #238636; color: white; border: none; padding: 12px;
+    border-radius: 12px; font-weight: 700; cursor: pointer;
+    transition: background-color 0.3s ease; user-select: none;
+  }
+  #upload-submit:hover { background: #2ea043; }
+  #upload-cancel {
+    margin-top: 12px; background: transparent; border: none; color: #58a6ff;
+    cursor: pointer; font-weight: 700; user-select: none;
+    transition: color 0.3s ease;
+  }
+  #upload-cancel:hover { color: #8ac7ff; }
+</style>
 </head>
 <body>
 
@@ -295,18 +136,16 @@
 </main>
 
 <!-- Модальное окно просмотра видео -->
-<div id="video-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-desc" tabindex="-1">
+<div id="video-modal" role="dialog" aria-modal="true" tabindex="-1">
   <div id="modal-content">
     <button id="modal-close" aria-label="Закрыть видео">&times;</button>
     <video id="modal-video" controls preload="metadata"></video>
-    <h2 id="modal-title"></h2>
-    <p id="modal-desc"></p>
   </div>
 </div>
 
 <!-- Форма загрузки -->
-<div id="upload-form" role="dialog" aria-modal="true" aria-labelledby="upload-form-title" tabindex="-1">
-  <h2 id="upload-form-title" style="color:#58a6ff; margin: 0 0 16px 0;">Загрузить видео</h2>
+<div id="upload-form" role="dialog" aria-modal="true" tabindex="-1">
+  <h2 style="color:#58a6ff; margin: 0 0 16px 0;">Загрузить видео</h2>
   <label for="video-title">Название</label>
   <input type="text" id="video-title" placeholder="Введите название видео" required />
 
@@ -321,18 +160,53 @@
 </div>
 
 <script>
-  const videos = [
-    {
-      title: "Погружение в мир MosyTube",
-      desc: "Добро пожаловать в новый видеохостинг с Никитой! Наслаждайтесь современным дизайном и удобным интерфейсом.",
-      src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm"
-    },
-    {
-      title: "Доброе утро, Никита!",
-      desc: "Начни свой день с позитивного видео-приветствия от MosyTube.",
-      src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/tank.webm"
-    }
-  ];
+  const dbName = "MosyTubeDB";
+  const dbVersion = 1;
+  let db;
+
+  // Открываем IndexedDB
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(dbName, dbVersion);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        db = request.result;
+        resolve(db);
+      };
+
+      request.onupgradeneeded = (e) => {
+        db = e.target.result;
+        if(!db.objectStoreNames.contains("videos")) {
+          const store = db.createObjectStore("videos", { keyPath: "id", autoIncrement: true });
+          store.createIndex("title", "title", { unique: false });
+          store.createIndex("desc", "desc", { unique: false });
+        }
+      };
+    });
+  }
+
+  // Добавить видео в БД
+  function addVideo(videoObj) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("videos", "readwrite");
+      const store = tx.objectStore("videos");
+      const request = store.add(videoObj);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  // Получить все видео из БД
+  function getAllVideos() {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("videos", "readonly");
+      const store = tx.objectStore("videos");
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
 
   // Элементы
   const videoList = document.getElementById('video-list');
@@ -344,12 +218,12 @@
 
   const videoModal = document.getElementById('video-modal');
   const modalVideo = document.getElementById('modal-video');
-  const modalTitle = document.getElementById('modal-title');
-  const modalDesc = document.getElementById('modal-desc');
   const modalClose = document.getElementById('modal-close');
 
+  let videos = [];
   let lastFocusedElement = null;
 
+  // Рендер видео
   function renderVideos(list) {
     videoList.innerHTML = '';
     if (list.length === 0) {
@@ -357,35 +231,36 @@
       return;
     }
     list.forEach(video => {
+      const url = URL.createObjectURL(video.blob);
       const card = document.createElement('div');
       card.className = 'video-card';
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       card.setAttribute('aria-label', `Видео: ${video.title}`);
       card.innerHTML = `
-        <video muted preload="metadata" src="${video.src}" tabindex="-1"></video>
+        <video muted preload="metadata" src="${url}" tabindex="-1"></video>
         <div class="video-info">
           <h3 class="video-title">${video.title}</h3>
           <p class="video-desc">${video.desc}</p>
         </div>
       `;
-      card.addEventListener('click', () => openModal(video));
-      card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(video); } });
+      card.addEventListener('click', () => openModal(video, url));
+      card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(video, url); } });
       videoList.appendChild(card);
     });
   }
 
-  function openModal(video) {
+  // Открыть модал с видео
+  function openModal(video, url) {
     lastFocusedElement = document.activeElement;
-    modalVideo.src = video.src;
-    modalTitle.textContent = video.title;
-    modalDesc.textContent = video.desc;
+    modalVideo.src = url;
     videoModal.classList.add('active');
     modalVideo.play();
     videoModal.focus();
     trapFocus(videoModal);
   }
 
+  // Закрыть модал
   function closeModal() {
     modalVideo.pause();
     modalVideo.src = '';
@@ -398,12 +273,14 @@
   videoModal.addEventListener('click', e => { if(e.target === videoModal) closeModal(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && videoModal.classList.contains('active')) closeModal(); });
 
+  // Поиск видео
   searchInput.addEventListener('input', () => {
     const query = searchInput.value.toLowerCase();
     const filtered = videos.filter(v => v.title.toLowerCase().includes(query) || v.desc.toLowerCase().includes(query));
     renderVideos(filtered);
   });
 
+  // Показать форму загрузки
   uploadBtn.addEventListener('click', () => {
     lastFocusedElement = document.activeElement;
     uploadForm.classList.add('active');
@@ -411,6 +288,7 @@
     trapFocus(uploadForm);
   });
 
+  // Отмена загрузки
   uploadCancel.addEventListener('click', () => {
     clearUploadForm();
     uploadForm.classList.remove('active');
@@ -418,13 +296,15 @@
     if(lastFocusedElement) lastFocusedElement.focus();
   });
 
+  // Очистить форму
   function clearUploadForm() {
     document.getElementById('video-title').value = '';
     document.getElementById('video-desc').value = '';
     document.getElementById('video-file').value = '';
   }
 
-  uploadSubmit.addEventListener('click', () => {
+  // Загрузка видео с лимитом 1 ГБ
+  uploadSubmit.addEventListener('click', async () => {
     const title = document.getElementById('video-title').value.trim();
     const desc = document.getElementById('video-desc').value.trim();
     const fileInput = document.getElementById('video-file');
@@ -435,21 +315,23 @@
       return;
     }
 
-    if(file.size > 50 * 1024 * 1024) {
-      alert('Максимальный размер видео: 50 МБ');
+    if(file.size > 1024 * 1024 * 1024) { // 1 ГБ лимит
+      alert('Максимальный размер видео: 1 ГБ');
       return;
     }
 
-    const src = URL.createObjectURL(file);
-    videos.push({ title, desc, src });
-    renderVideos(videos);
-
-    alert('Видео успешно загружено! Но после обновления страницы оно пропадёт ;)');
-
-    clearUploadForm();
-    uploadForm.classList.remove('active');
-    releaseFocusTrap();
-    if(lastFocusedElement) lastFocusedElement.focus();
+    try {
+      await addVideo({ title, desc, blob: file });
+      videos = await getAllVideos();
+      renderVideos(videos);
+      alert('Видео успешно загружено и сохранено в браузере!');
+      clearUploadForm();
+      uploadForm.classList.remove('active');
+      releaseFocusTrap();
+      if(lastFocusedElement) lastFocusedElement.focus();
+    } catch(e) {
+      alert('Ошибка при сохранении видео: ' + e.message);
+    }
   });
 
   // Фокус-трап для модальных окон
@@ -492,8 +374,13 @@
     }
   }
 
-  // Изначальный рендер
-  renderVideos(videos);
+  // Инициализация базы и загрузка видео при старте
+  (async () => {
+    await openDB();
+    videos = await getAllVideos();
+    renderVideos(videos);
+  })();
+
 </script>
 
 </body>
