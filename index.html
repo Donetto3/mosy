@@ -2,67 +2,150 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Krakins: Костя Соколов</title>
+  <title>KRAKINS: Костя Соколов</title>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
       overflow: hidden;
-      background: radial-gradient(circle at center, #001f33 0%, #000 100%);
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
+      background: #000022;
       color: white;
     }
 
-    #gameCanvas {
+    canvas {
       display: block;
       margin: auto;
-      background-color: #001b2e;
-      border: 3px solid #00ffff;
+      background: radial-gradient(#001f33, #000);
+      border: 4px solid cyan;
+    }
+
+    #menu {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    #menu h1 {
+      font-size: 48px;
+      margin-bottom: 30px;
+      text-shadow: 0 0 10px cyan;
+    }
+
+    #startBtn {
+      font-size: 24px;
+      padding: 15px 40px;
+      border: none;
+      background-color: cyan;
+      color: black;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    #startBtn:hover {
+      background-color: white;
+    }
+
+    #score, #game-over {
+      position: absolute;
+      font-size: 20px;
+      z-index: 5;
     }
 
     #score {
-      position: absolute;
       top: 10px;
       left: 10px;
-      font-size: 20px;
     }
 
     #game-over {
-      position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 48px;
+      font-size: 36px;
+      text-align: center;
       display: none;
     }
+
+    #restartBtn {
+      margin-top: 20px;
+      padding: 10px 30px;
+      font-size: 18px;
+      background-color: cyan;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
   </style>
 </head>
 <body>
+
+  <div id="menu">
+    <h1>KRAKINS: Костя Соколов</h1>
+    <button id="startBtn">Играть</button>
+  </div>
+
   <canvas id="gameCanvas" width="800" height="600"></canvas>
   <div id="score">Счёт: 0</div>
-  <div id="game-over">💀 Игра окончена! Обнови страницу</div>
+
+  <div id="game-over">
+    <div>💀 Игра окончена!</div>
+    <button id="restartBtn">Играть снова</button>
+  </div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    const player = {
-      x: 400,
-      y: 300,
-      size: 30,
-      speed: 5,
-      color: 'lime'
+    const menu = document.getElementById('menu');
+    const startBtn = document.getElementById('startBtn');
+    const gameOverScreen = document.getElementById('game-over');
+    const restartBtn = document.getElementById('restartBtn');
+    const scoreEl = document.getElementById('score');
+
+    let player, keys, torpedoes, bonuses, score, gameOver, frame;
+
+    function initGame() {
+      player = {
+        x: 400,
+        y: 300,
+        size: 25,
+        speed: 4,
+        color: 'lime'
+      };
+
+      keys = {};
+      torpedoes = [];
+      bonuses = [];
+      score = 0;
+      gameOver = false;
+      frame = 0;
+
+      gameOverScreen.style.display = 'none';
+      scoreEl.textContent = "Счёт: 0";
+      animate();
+    }
+
+    startBtn.onclick = () => {
+      menu.style.display = 'none';
+      initGame();
     };
 
-    const keys = {};
-    const torpedoes = [];
-    const bonuses = [];
+    restartBtn.onclick = () => {
+      initGame();
+    };
 
-    let score = 0;
-    let gameOver = false;
-    let spawnRate = 80; // меньше = сложнее
-
-    document.addEventListener('keydown', (e) => keys[e.key] = true);
-    document.addEventListener('keyup', (e) => keys[e.key] = false);
+    document.addEventListener('keydown', e => keys[e.key] = true);
+    document.addEventListener('keyup', e => keys[e.key] = false);
 
     function drawPlayer() {
       ctx.fillStyle = player.color;
@@ -80,7 +163,7 @@
 
     function spawnTorpedo() {
       const dir = Math.floor(Math.random() * 4);
-      const speed = Math.random() * 2 + 2 + score / 50;
+      const speed = 2 + score / 100;
       let t = { x: 0, y: 0, dx: 0, dy: 0, size: 20, speed: speed };
 
       switch (dir) {
@@ -113,14 +196,14 @@
       for (let t of torpedoes) {
         const dist = Math.hypot(player.x - t.x, player.y - t.y);
         if (dist < player.size + t.size / 2) {
-          document.getElementById('game-over').style.display = 'block';
           gameOver = true;
+          gameOverScreen.style.display = 'block';
         }
       }
     }
 
     function spawnBonus() {
-      if (Math.random() < 0.05) {
+      if (Math.random() < 0.01) {
         bonuses.push({
           x: Math.random() * (canvas.width - 20) + 10,
           y: Math.random() * (canvas.height - 20) + 10,
@@ -150,16 +233,17 @@
     }
 
     function updateScore() {
-      document.getElementById('score').textContent = 'Счёт: ' + score;
+      scoreEl.textContent = 'Счёт: ' + score;
     }
 
-    function gameLoop() {
+    function animate() {
       if (gameOver) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawPlayer();
-      movePlayer();
 
-      if (Math.floor(Math.random() * spawnRate) === 0) spawnTorpedo();
+      movePlayer();
+      drawPlayer();
+
+      if (frame % 60 === 0) spawnTorpedo();
       moveTorpedoes();
       drawTorpedoes();
 
@@ -170,11 +254,12 @@
       checkCollision();
       updateScore();
 
+      frame++;
       score += 1;
-      requestAnimationFrame(gameLoop);
-    }
 
-    gameLoop();
+      requestAnimationFrame(animate);
+    }
   </script>
+
 </body>
 </html>
