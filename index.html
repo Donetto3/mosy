@@ -34,6 +34,7 @@
     gap: 20px; overflow-y: auto; min-height: 0;
   }
   .video-card {
+    position: relative;
     background: #161b22; border-radius: 12px; overflow: hidden;
     box-shadow: 0 0 8px #22272e inset; display: flex; flex-direction: column;
     cursor: pointer; transition: transform 0.2s ease, box-shadow 0.3s ease; user-select: none;
@@ -57,7 +58,26 @@
     overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
     -webkit-line-clamp: 3; -webkit-box-orient: vertical;
   }
-  /* Модальное окно */
+  .delete-btn {
+    position: absolute;
+    top: 8px; right: 8px;
+    background: #f85149;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    z-index: 2;
+  }
+  .delete-btn:hover {
+    opacity: 1;
+  }
+
   #video-modal {
     position: fixed; inset: 0; background: rgba(13,17,23,0.95); display: none;
     align-items: center; justify-content: center; z-index: 9999; padding: 0;
@@ -79,8 +99,6 @@
     width: 100vw; height: 100vh; background: black; border-radius: 0; outline: none;
     object-fit: contain;
   }
-
-  /* Форма загрузки */
   #upload-form {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
     background: #161b22; padding: 30px; border-radius: 14px; max-width: 400px;
@@ -135,7 +153,6 @@
   <!-- Видео появятся здесь -->
 </main>
 
-<!-- Модальное окно просмотра видео -->
 <div id="video-modal" role="dialog" aria-modal="true" tabindex="-1">
   <div id="modal-content">
     <button id="modal-close" aria-label="Закрыть видео">&times;</button>
@@ -143,7 +160,6 @@
   </div>
 </div>
 
-<!-- Форма загрузки -->
 <div id="upload-form" role="dialog" aria-modal="true" tabindex="-1">
   <h2 style="color:#58a6ff; margin: 0 0 16px 0;">Загрузить видео</h2>
   <label for="video-title">Название</label>
@@ -164,7 +180,6 @@
   const dbVersion = 1;
   let db;
 
-  // Открываем IndexedDB
   function openDB() {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(dbName, dbVersion);
@@ -186,7 +201,6 @@
     });
   }
 
-  // Добавить видео в БД
   function addVideo(videoObj) {
     return new Promise((resolve, reject) => {
       const tx = db.transaction("videos", "readwrite");
@@ -197,7 +211,6 @@
     });
   }
 
-  // Получить все видео из БД
   function getAllVideos() {
     return new Promise((resolve, reject) => {
       const tx = db.transaction("videos", "readonly");
@@ -208,7 +221,16 @@
     });
   }
 
-  // Элементы
+  function deleteVideo(id) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("videos", "readwrite");
+      const store = tx.objectStore("videos");
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   const videoList = document.getElementById('video-list');
   const searchInput = document.getElementById('search-input');
   const uploadBtn = document.getElementById('upload-btn');
@@ -223,7 +245,6 @@
   let videos = [];
   let lastFocusedElement = null;
 
-  // Рендер видео
   function renderVideos(list) {
     videoList.innerHTML = '';
     if (list.length === 0) {
@@ -237,20 +258,45 @@
       card.tabIndex = 0;
       card.setAttribute('role', 'button');
       card.setAttribute('aria-label', `Видео: ${video.title}`);
+
+      card.addEventListener('click', e => {
+        if(e.target.classList.contains('delete-btn')) return;
+        openModal(video, url);
+      });
+      card.addEventListener('keydown', e => {
+        if ((e.key === 'Enter' || e.key === ' ') && !e.target.classList.contains('delete-btn')) {
+          e.preventDefault();
+          openModal(video, url);
+        }
+      });
+
       card.innerHTML = `
         <video muted preload="metadata" src="${url}" tabindex="-1"></video>
         <div class="video-info">
           <h3 class="video-title">${video.title}</h3>
           <p class="video-desc">${video.desc}</p>
         </div>
+        <button class="delete-btn" aria-label="Удалить видео ${video.title}" title="Удалить">×</button>
       `;
-      card.addEventListener('click', () => openModal(video, url));
-      card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openModal(video, url); } });
+
+      card.querySelector('.delete-btn').addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if(confirm(`Удалить видео "${video.title}"?`)) {
+          try {
+            await deleteVideo(video.id);
+            videos = await getAllVideos();
+            renderVideos(videos);
+            alert('Видео удалено.');
+          } catch(err) {
+            alert('Ошибка при удалении видео: ' + err.message);
+          }
+        }
+      });
+
       videoList.appendChild(card);
     });
   }
 
-  // Открыть модал с видео
   function openModal(video, url) {
     lastFocusedElement = document.activeElement;
     modalVideo.src = url;
@@ -260,7 +306,6 @@
     trapFocus(videoModal);
   }
 
-  // Закрыть модал
   function closeModal() {
     modalVideo.pause();
     modalVideo.src = '';
@@ -273,14 +318,12 @@
   videoModal.addEventListener('click', e => { if(e.target === videoModal) closeModal(); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && videoModal.classList.contains('active')) closeModal(); });
 
-  // Поиск видео
   searchInput.addEventListener('input', () => {
     const query = searchInput.value.toLowerCase();
     const filtered = videos.filter(v => v.title.toLowerCase().includes(query) || v.desc.toLowerCase().includes(query));
     renderVideos(filtered);
   });
 
-  // Показать форму загрузки
   uploadBtn.addEventListener('click', () => {
     lastFocusedElement = document.activeElement;
     uploadForm.classList.add('active');
@@ -288,7 +331,6 @@
     trapFocus(uploadForm);
   });
 
-  // Отмена загрузки
   uploadCancel.addEventListener('click', () => {
     clearUploadForm();
     uploadForm.classList.remove('active');
@@ -296,14 +338,12 @@
     if(lastFocusedElement) lastFocusedElement.focus();
   });
 
-  // Очистить форму
   function clearUploadForm() {
     document.getElementById('video-title').value = '';
     document.getElementById('video-desc').value = '';
     document.getElementById('video-file').value = '';
   }
 
-  // Загрузка видео с лимитом 1 ГБ
   uploadSubmit.addEventListener('click', async () => {
     const title = document.getElementById('video-title').value.trim();
     const desc = document.getElementById('video-desc').value.trim();
@@ -342,46 +382,19 @@
 
   function trapFocus(element) {
     focusTrapElement = element;
-    focusableElements = focusTrapElement.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    focusableElements = Array.from(focusTrapElement.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el => !el.disabled);
     if(focusableElements.length === 0) return;
     firstFocusable = focusableElements[0];
     lastFocusable = focusableElements[focusableElements.length -1];
 
     focusTrapElement.addEventListener('keydown', handleTrap);
-
-    function handleTrap(e) {
-      if(e.key !== 'Tab') return;
-      if(e.shiftKey) {
-        if(document.activeElement === firstFocusable) {
-          e.preventDefault();
-          lastFocusable.focus();
-        }
-      } else {
-        if(document.activeElement === lastFocusable) {
-          e.preventDefault();
-          firstFocusable.focus();
-        }
-      }
-    }
-  }
-  function releaseFocusTrap() {
-    if(focusTrapElement) {
-      focusTrapElement.removeEventListener('keydown', handleTrap);
-      focusTrapElement = null;
-      focusableElements = [];
-      firstFocusable = null;
-      lastFocusable = null;
-    }
   }
 
-  // Инициализация базы и загрузка видео при старте
-  (async () => {
-    await openDB();
-    videos = await getAllVideos();
-    renderVideos(videos);
-  })();
+  function handleTrap(e) {
+    if(e.key !== 'Tab') return;
 
-</script>
-
-</body>
-</html>
+    if(e.shiftKey) {
+      if(document.activeElement === firstFocusable) {
+        e.preventDefault();
+        lastFocusable.focus();
+     
