@@ -1,57 +1,97 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <title>Market от Donatello</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Кракен Костя</title>
   <style>
-    body { font-family: sans-serif; background: #111; color: white; margin: 0; padding: 0; }
-    .header { padding: 20px; background: #222; text-align: center; font-size: 24px; }
-    .market { display: flex; flex-wrap: wrap; gap: 20px; padding: 20px; justify-content: center; }
-    .item {
-      background: #1b1b1b;
-      border: 1px solid #333;
-      padding: 10px;
-      width: 200px;
-      text-align: center;
-      border-radius: 8px;
-    }
-    .item img { width: 100%; height: 150px; object-fit: cover; }
-    .item button {
-      background: #2ecc71;
+    body {
+      margin: 0;
+      font-family: 'Comic Sans MS', cursive;
+      background: linear-gradient(to bottom, #5f7cff, #000028);
       color: white;
-      border: none;
-      padding: 10px;
-      margin-top: 10px;
-      cursor: pointer;
+      text-align: center;
+      overflow: hidden;
+    }
+    h1 {
+      margin-top: 50px;
+      font-size: 3em;
+      animation: wiggle 2s infinite;
+    }
+    p {
+      font-size: 1.4em;
+      margin: 20px auto;
+      max-width: 600px;
+    }
+    img {
+      width: 200px;
+      animation: floaty 4s infinite ease-in-out;
+    }
+    .bubble {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      animation: rise 8s infinite linear;
+    }
+
+    @keyframes floaty {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0); }
+    }
+
+    @keyframes rise {
+      from {
+        bottom: -50px;
+        opacity: 1;
+        transform: scale(0.5);
+      }
+      to {
+        bottom: 100%;
+        opacity: 0;
+        transform: scale(1.2);
+      }
+    }
+
+    @keyframes wiggle {
+      0%, 100% { transform: rotate(-2deg); }
+      50% { transform: rotate(2deg); }
+    }
+
+    footer {
+      position: fixed;
+      bottom: 10px;
+      width: 100%;
+      font-size: 0.8em;
+      color: #aaa;
     }
   </style>
 </head>
 <body>
-  <div class="header">Добро пожаловать в Market от Donatello</div>
-  <div class="market" id="market">
-    <!-- Товары вставляются сюда скриптом -->
-  </div>
+
+  <h1>🐙 Кракен Костя</h1>
+  <p>Костя — единственный Кракен, который боится воды, но отважно сражается с комментаторами в интернете.</p>
+  <img src="https://i.imgur.com/NZ2fRyz.png" alt="Кракен Костя">
+
+  <p><strong>Факт:</strong> Костя когда-то проиграл спор коту... и до сих пор платит алименты на аквариум.</p>
+
+  <footer>© 2025 Кракен Костя. Все права на щупальца защищены.</footer>
 
   <script>
-    const items = [
-      { name: "AWP | Dragon Lore", price: "9999₽", img: "https://via.placeholder.com/200x150?text=AWP" },
-      { name: "AK-47 | Redline", price: "1299₽", img: "https://via.placeholder.com/200x150?text=AK-47" },
-      { name: "Desert Eagle | Blaze", price: "2899₽", img: "https://via.placeholder.com/200x150?text=Deagle" }
-    ];
+    function createBubble() {
+      const bubble = document.createElement('div');
+      bubble.classList.add('bubble');
+      bubble.style.width = bubble.style.height = `${Math.random() * 20 + 10}px`;
+      bubble.style.left = `${Math.random() * 100}%`;
+      document.body.appendChild(bubble);
 
-    const market = document.getElementById("market");
+      setTimeout(() => {
+        bubble.remove();
+      }, 8000);
+    }
 
-    items.forEach(item => {
-      const el = document.createElement("div");
-      el.className = "item";
-      el.innerHTML = `
-        <img src="${item.img}" alt="${item.name}" />
-        <div><strong>${item.name}</strong></div>
-        <div>${item.price}</div>
-        <button>Купить</button>
-      `;
-      market.appendChild(el);
-    });
+    setInterval(createBubble, 300);
   </script>
+
 </body>
 </html>
