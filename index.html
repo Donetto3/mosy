@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>MosyTube — видеохостинг</title>
 <style>
+  /* Оставим стили из предыдущего варианта */
   body {
     margin: 0; font-family: Arial, sans-serif; background: #111; color: #eee;
     display: flex; flex-direction: column; min-height: 100vh;
@@ -98,10 +99,7 @@
 <input type="file" id="file-input" accept="video/*" style="display:none" />
 
 <script>
-  const dbName = 'MosyTubeDB';
-  const storeName = 'videos';
-  let db;
-  let videos = [];
+  const API_URL = 'http://localhost:3000'; // Адрес сервера
 
   const videoList = document.getElementById('video-list');
   const searchInput = document.getElementById('search-input');
@@ -112,51 +110,18 @@
   const modalVideo = document.getElementById('modal-video');
   const modalClose = document.getElementById('modal-close');
 
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(dbName, 1);
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        db = request.result;
-        resolve(db);
-      };
-      request.onupgradeneeded = (e) => {
-        db = e.target.result;
-        if (!db.objectStoreNames.contains(storeName)) {
-          db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
-        }
-      };
-    });
-  }
+  let videos = [];
 
-  function addVideo(videoObj) {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      const store = tx.objectStore(storeName);
-      const request = store.add(videoObj);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  function getAllVideos() {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readonly');
-      const store = tx.objectStore(storeName);
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  function deleteVideo(id) {
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(storeName, 'readwrite');
-      const store = tx.objectStore(storeName);
-      const request = store.delete(id);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+  // Получить список видео с сервера
+  async function fetchVideos() {
+    try {
+      const res = await fetch(API_URL + '/videos');
+      if (!res.ok) throw new Error('Ошибка загрузки видео');
+      videos = await res.json();
+      renderVideos(videos);
+    } catch (e) {
+      alert(e.message);
+    }
   }
 
   // Отобразить список видео
@@ -167,7 +132,7 @@
       return;
     }
     list.forEach(video => {
-      const url = URL.createObjectURL(video.blob);
+      const videoUrl = `${API_URL}/videos/file/${video.filename}`;
       const card = document.createElement('div');
       card.className = 'video-card';
       card.tabIndex = 0;
@@ -175,7 +140,7 @@
       card.setAttribute('aria-label', `Видео: ${video.title || 'без названия'}`);
 
       card.innerHTML = `
-        <video muted preload="metadata" src="${url}"></video>
+        <video muted preload="metadata" src="${videoUrl}"></video>
         <div class="video-info">
           <h3 class="video-title">${video.title || 'Без названия'}</h3>
           <p class="video-desc">${video.desc || ''}</p>
@@ -187,8 +152,9 @@
         e.stopPropagation();
         if (confirm(`Удалить видео "${video.title || 'без названия'}"?`)) {
           try {
-            await deleteVideo(video.id);
-            await loadAndRenderVideos();
+            const res = await fetch(`${API_URL}/videos/${video.id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Ошибка удаления видео');
+            await fetchVideos();
             alert('Видео удалено.');
           } catch (err) {
             alert('Ошибка удаления: ' + err.message);
@@ -197,22 +163,17 @@
       });
 
       card.addEventListener('click', () => {
-        openModal(url);
+        openModal(videoUrl);
       });
       card.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          openModal(url);
+          openModal(videoUrl);
         }
       });
 
       videoList.appendChild(card);
     });
-  }
-
-  async function loadAndRenderVideos() {
-    videos = await getAllVideos();
-    renderVideos(videos);
   }
 
   // Модалка
@@ -265,11 +226,21 @@
     const desc = prompt('Введите описание видео (необязательно):', '') || '';
 
     try {
-      await addVideo({ title, desc, blob: file });
-      await loadAndRenderVideos();
+      const formData = new FormData();
+      formData.append('video', file);
+      formData.append('title', title);
+      formData.append('desc', desc);
+
+      const res = await fetch(API_URL + '/videos', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) throw new Error('Ошибка при загрузке видео');
+      await fetchVideos();
       alert('Видео успешно загружено и сохранено.');
     } catch (err) {
-      alert('Ошибка при сохранении видео: ' + err.message);
+      alert(err.message);
     }
     fileInput.value = '';
   });
@@ -285,8 +256,7 @@
   });
 
   // Инициализация
-  openDB().then(() => loadAndRenderVideos())
-    .catch(err => alert('Ошибка инициализации IndexedDB: ' + err.message));
+  fetchVideos();
 </script>
 
 </body>
