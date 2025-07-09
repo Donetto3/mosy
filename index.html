@@ -2,96 +2,179 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Krakins Костя</title>
+  <title>Krakins: Костя Соколов</title>
   <style>
     body {
       margin: 0;
-      font-family: 'Comic Sans MS', cursive;
-      background: linear-gradient(to bottom, #5f7cff, #000028);
-      color: white;
-      text-align: center;
       overflow: hidden;
+      background: radial-gradient(circle at center, #001f33 0%, #000 100%);
+      font-family: Arial, sans-serif;
+      color: white;
     }
-    h1 {
-      margin-top: 50px;
-      font-size: 3em;
-      animation: wiggle 2s infinite;
+
+    #gameCanvas {
+      display: block;
+      margin: auto;
+      background-color: #001b2e;
+      border: 3px solid #00ffff;
     }
-    p {
-      font-size: 1.4em;
-      margin: 20px auto;
-      max-width: 600px;
-    }
-    img {
-      width: 200px;
-      animation: floaty 4s infinite ease-in-out;
-    }
-    .bubble {
+
+    #score {
       position: absolute;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.3);
-      animation: rise 8s infinite linear;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
     }
 
-    @keyframes floaty {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-20px); }
-      100% { transform: translateY(0); }
-    }
-
-    @keyframes rise {
-      from {
-        bottom: -50px;
-        opacity: 1;
-        transform: scale(0.5);
-      }
-      to {
-        bottom: 100%;
-        opacity: 0;
-        transform: scale(1.2);
-      }
-    }
-
-    @keyframes wiggle {
-      0%, 100% { transform: rotate(-2deg); }
-      50% { transform: rotate(2deg); }
-    }
-
-    footer {
-      position: fixed;
-      bottom: 10px;
-      width: 100%;
-      font-size: 0.8em;
-      color: #aaa;
+    #game-over {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      display: none;
     }
   </style>
 </head>
 <body>
-
-  <h1>🐙 Кракен Костя</h1>
-  <p>Костя — единственный Кракен, который боится воды, но отважно сражается с комментаторами в интернете.</p>
-  <img src="https://i.imgur.com/NZ2fRyz.png" alt="Кракен Костя">
-
-  <p><strong>Факт:</strong> Костя когда-то проиграл спор коту... и до сих пор платит алименты на аквариум.</p>
-
-  <footer>© 2025 Кракен Костя. Все права на щупальца защищены.</footer>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div id="score">Счёт: 0</div>
+  <div id="game-over">💀 Игра окончена! Обнови страницу</div>
 
   <script>
-    function createBubble() {
-      const bubble = document.createElement('div');
-      bubble.classList.add('bubble');
-      bubble.style.width = bubble.style.height = `${Math.random() * 20 + 10}px`;
-      bubble.style.left = `${Math.random() * 100}%`;
-      document.body.appendChild(bubble);
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-      setTimeout(() => {
-        bubble.remove();
-      }, 8000);
+    const player = {
+      x: 400,
+      y: 300,
+      size: 30,
+      speed: 5,
+      color: 'lime'
+    };
+
+    const keys = {};
+    const torpedoes = [];
+    const bonuses = [];
+
+    let score = 0;
+    let gameOver = false;
+    let spawnRate = 80; // меньше = сложнее
+
+    document.addEventListener('keydown', (e) => keys[e.key] = true);
+    document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+    function drawPlayer() {
+      ctx.fillStyle = player.color;
+      ctx.beginPath();
+      ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    setInterval(createBubble, 300);
-  </script>
+    function movePlayer() {
+      if (keys['ArrowLeft'] && player.x - player.size > 0) player.x -= player.speed;
+      if (keys['ArrowRight'] && player.x + player.size < canvas.width) player.x += player.speed;
+      if (keys['ArrowUp'] && player.y - player.size > 0) player.y -= player.speed;
+      if (keys['ArrowDown'] && player.y + player.size < canvas.height) player.y += player.speed;
+    }
 
+    function spawnTorpedo() {
+      const dir = Math.floor(Math.random() * 4);
+      const speed = Math.random() * 2 + 2 + score / 50;
+      let t = { x: 0, y: 0, dx: 0, dy: 0, size: 20, speed: speed };
+
+      switch (dir) {
+        case 0: t.x = 0; t.y = Math.random() * canvas.height; t.dx = 1; break;
+        case 1: t.x = canvas.width; t.y = Math.random() * canvas.height; t.dx = -1; break;
+        case 2: t.x = Math.random() * canvas.width; t.y = 0; t.dy = 1; break;
+        case 3: t.x = Math.random() * canvas.width; t.y = canvas.height; t.dy = -1; break;
+      }
+
+      torpedoes.push(t);
+    }
+
+    function drawTorpedoes() {
+      ctx.fillStyle = 'red';
+      for (let t of torpedoes) {
+        ctx.beginPath();
+        ctx.rect(t.x, t.y, t.size, t.size);
+        ctx.fill();
+      }
+    }
+
+    function moveTorpedoes() {
+      for (let t of torpedoes) {
+        t.x += t.dx * t.speed;
+        t.y += t.dy * t.speed;
+      }
+    }
+
+    function checkCollision() {
+      for (let t of torpedoes) {
+        const dist = Math.hypot(player.x - t.x, player.y - t.y);
+        if (dist < player.size + t.size / 2) {
+          document.getElementById('game-over').style.display = 'block';
+          gameOver = true;
+        }
+      }
+    }
+
+    function spawnBonus() {
+      if (Math.random() < 0.05) {
+        bonuses.push({
+          x: Math.random() * (canvas.width - 20) + 10,
+          y: Math.random() * (canvas.height - 20) + 10,
+          size: 10
+        });
+      }
+    }
+
+    function drawBonuses() {
+      ctx.fillStyle = 'yellow';
+      for (let b of bonuses) {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function checkBonus() {
+      for (let i = bonuses.length - 1; i >= 0; i--) {
+        const b = bonuses[i];
+        const dist = Math.hypot(player.x - b.x, player.y - b.y);
+        if (dist < player.size + b.size) {
+          score += 10;
+          bonuses.splice(i, 1);
+        }
+      }
+    }
+
+    function updateScore() {
+      document.getElementById('score').textContent = 'Счёт: ' + score;
+    }
+
+    function gameLoop() {
+      if (gameOver) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPlayer();
+      movePlayer();
+
+      if (Math.floor(Math.random() * spawnRate) === 0) spawnTorpedo();
+      moveTorpedoes();
+      drawTorpedoes();
+
+      spawnBonus();
+      drawBonuses();
+      checkBonus();
+
+      checkCollision();
+      updateScore();
+
+      score += 1;
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
 </body>
 </html>
