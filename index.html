@@ -59,7 +59,13 @@
   }
   #video-modal.active { display: flex; }
   #modal-video {
-    max-width: 90vw; max-height: 90vh; background: black;
+    max-width: 90vw; 
+    max-height: 90vh; 
+    width: auto;
+    height: auto;
+    background: black;
+    box-shadow: 0 0 20px #58a6ff;
+    border-radius: 12px;
   }
   #modal-close {
     position: fixed; top: 20px; right: 30px; font-size: 36px; color: #58a6ff; background: transparent; border: none;
@@ -245,6 +251,12 @@
     const file = fileInput.files[0];
     if (!file.type.startsWith('video/')) {
       alert('Пожалуйста, выберите видеофайл.');
+      fileInput.value = '';
+      return;
+    }
+
+    if (file.size > 1024 * 1024 * 1024) { // 1 ГБ лимит
+      alert('Максимальный размер видео: 1 ГБ');
       fileInput.value = '';
       return;
     }
