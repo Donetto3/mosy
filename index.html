@@ -38,29 +38,37 @@
         return gk_fileData[filename] || "";
         }
         </script><!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Witcher 3 Ultimate Guide</title>
+  <title>Покори Ведьмака 3</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    #map { height: 600px; background: #2d1e12; } /* Parchment-like background */
+    #map { height: 600px; background: #2d1e12; } /* Пергаментный фон */
     body { 
       background: url('https://images.unsplash.com/photo-1518709268805-4e9042af592c') no-repeat center center fixed; 
       background-size: cover; 
-      font-family: 'Cinzel', serif; /* Witcher-style font */
+      font-family: 'Cinzel', serif; /* Шрифт в стиле Ведьмака */
     }
     .leaflet-popup-content-wrapper { 
       background: #3c2f1e; 
       color: #e6c78a; 
       font-family: 'Cinzel', serif; 
       padding: 10px; 
+      border: 2px solid #e6c78a; 
     }
     .leaflet-popup-tip { background: #3c2f1e; }
+    .animate-glow { 
+      animation: glow 1s ease-in-out infinite alternate; 
+    }
+    @keyframes glow {
+      from { text-shadow: 0 0 5px #e6c78a, 0 0 10px #e6c78a; }
+      to { text-shadow: 0 0 10px #e6c78a, 0 0 20px #e6c78a; }
+    }
     .animate-scroll { 
       animation: scroll 0.5s ease-in-out; 
     }
@@ -68,17 +76,29 @@
       0% { transform: translateY(-10px); opacity: 0; }
       100% { transform: translateY(0); opacity: 1; }
     }
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 250px;
+      background: #2d1e12;
+      border-right: 2px solid #e6c78a;
+      overflow-y: auto;
+      z-index: 1000;
+      padding: 1rem;
+    }
   </style>
-  <!-- Witcher-style font -->
+  <!-- Шрифт в стиле Ведьмака -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-900 text-white">
   <div id="root"></div>
 
-  <!-- React and ReactDOM -->
+  <!-- React и ReactDOM -->
   <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <!-- Babel for JSX -->
+  <!-- Babel для JSX -->
   <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.5/babel.min.js"></script>
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -86,157 +106,285 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // Navigation Component
+    // Компонент навигации
     function Navbar() {
       return (
         <nav class="bg-gray-800 p-4 shadow-lg">
           <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-yellow-600">Witcher 3 Ultimate Guide</h1>
+            <h1 class="text-2xl font-bold text-yellow-600 animate-glow">Гид по Ведьмаку 3</h1>
             <div class="space-x-4">
-              <a href="#home" class="hover:text-yellow-600">Home</a>
-              <a href="#map" class="hover:text-yellow-600">Map</a>
-              <a href="#tips" class="hover:text-yellow-600">Tips</a>
-              <a href="#locations" class="hover:text-yellow-600">Locations</a>
+              <a href="#home" class="hover:text-yellow-600">Главная</a>
+              <a href="#map" class="hover:text-yellow-600">Карта</a>
+              <a href="#tips" class="hover:text-yellow-600">Советы</a>
+              <a href="#locations" class="hover:text-yellow-600">Локации</a>
             </div>
           </div>
         </nav>
       );
     }
 
-    // Map Component
-    function WitcherMap({ selectedCategory, searchQuery }) {
+    // Компонент боковой панели для фильтров и регионов
+    function Sidebar({ categories, selectedCategories, toggleCategory, setRegion }) {
+      const regions = ["Все", "Белый Сад", "Велен", "Новиград", "Скеллиге", "Каэр Морхен"];
+
+      return (
+        <div class="sidebar">
+          <h2 class="text-xl font-bold text-yellow-600 mb-4">Категории</h2>
+          {categories.map(cat => (
+            <div key={cat} class="mb-2">
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={selectedCategories.includes(cat)}
+                  onChange={() => toggleCategory(cat)}
+                  class="mr-2"
+                />
+                <span>{cat}</span>
+              </label>
+            </div>
+          ))}
+          <h2 class="text-xl font-bold text-yellow-600 mt-6 mb-4">Регионы</h2>
+          <select
+            class="bg-gray-800 text-white p-2 rounded w-full"
+            onChange={(e) => setRegion(e.target.value)}
+          >
+            {regions.map(region => (
+              <option key={region} value={region}>{region}</option>
+            ))}
+          </select>
+        </div>
+      );
+    }
+
+    // Компонент карты
+    function WitcherMap({ selectedCategories, searchQuery, region, setProgress, progress }) {
       const [map, setMap] = useState(null);
 
       useEffect(() => {
-        // Initialize map
+        // Инициализация карты
         const witcherMap = L.map('map', { 
-          crs: L.CRS.Simple, // Custom coordinate system for game map
+          crs: L.CRS.Simple,
           minZoom: -1,
           maxZoom: 3
         });
 
-        // Witcher 3 map image (replace with your own high-quality map URL)
-        const mapUrl = 'https://www.witcher3map.com/img/maps/full-map.jpg'; // Full Witcher 3 map
-        const bounds = [[0, 0], [2000, 2000]]; // Adjust based on image size
+        // Локальная карта Ведьмака 3
+        const mapUrl = './witcher3-map.jpg'; // Помести файл в папку с index.html
+        const bounds = [[0, 0], [2000, 2000]]; // Настрой под размер карты
         L.imageOverlay(mapUrl, bounds).addTo(witcherMap);
         witcherMap.fitBounds(bounds);
 
-        // Locations with drops (based on Witcher 3 data)
+        // Локации с дропами
         const locations = [
           { 
-            name: "White Orchard - Hidden Treasure", 
-            category: "Treasure", 
+            name: "Белый Сад - Скрытый сундук", 
+            category: "Сокровища", 
+            region: "Белый Сад",
             x: 300, y: 400, 
-            desc: "Chest near the mill. Drops: <b>Griffin Armor Blueprint</b>, 50 crowns.", 
-            drop: "additem('Griffin Armor 1')"
+            desc: "Сундук у мельницы. Дроп: <b>Чертеж брони Грифона</b>, 50 крон.", 
+            drop: "additem('Griffin Armor 1')",
+            id: "loc1"
           },
           { 
-            name: "Kaer Morhen - Training Grounds", 
-            category: "Quest", 
+            name: "Каэр Морхен - Тренировочная площадка", 
+            category: "Квесты", 
+            region: "Каэр Морхен",
             x: 500, y: 600, 
-            desc: "Practice signs here. Drops: <b>Skill Point</b>, training notes.", 
-            drop: "learnskill('sign_quen_1')"
+            desc: "Тренируйте знаки. Дроп: <b>Очко навыка</b>, заметки.", 
+            drop: "learnskill('sign_quen_1')",
+            id: "loc2"
           },
           { 
-            name: "Novigrad - Kingfisher Inn", 
-            category: "Gwent", 
+            name: "Новиград - Таверна 'Кингфишер'", 
+            category: "Гвинт", 
+            region: "Новиград",
             x: 700, y: 200, 
-            desc: "Play Gwent with innkeeper. Drops: <b>Gwent Card: Ciri</b>.", 
-            drop: "addgwintcards('gwint_card_ciri')"
+            desc: "Сыграйте в Гвинт с трактирщиком. Дроп: <b>Карта Гвинта: Цири</b>.", 
+            drop: "addgwintcards('gwint_card_ciri')",
+            id: "loc3"
           },
           { 
-            name: "Velen - Bandit Camp", 
-            category: "Monster", 
+            name: "Велен - Лагерь бандитов", 
+            category: "Монстры", 
+            region: "Велен",
             x: 400, y: 500, 
-            desc: "Defeat bandits and a noonwraith. Drops: <b>Noonwraith Trophy</b>, 100 crowns.", 
-            drop: "additem('mh103_noonwraith_trophy')"
+            desc: "Победите бандитов и полуденницу. Дроп: <b>Трофей полуденницы</b>, 100 крон.", 
+            drop: "additem('mh103_noonwraith_trophy')",
+            id: "loc4"
           },
           { 
-            name: "Skellige - Ancient Crypt", 
-            category: "Treasure", 
+            name: "Скеллиге - Древний склеп", 
+            category: "Сокровища", 
+            region: "Скеллиге",
             x: 600, y: 300, 
-            desc: "Guarded by drowners. Drops: <b>Wolf Armor Blueprint</b>, relic sword.", 
-            drop: "additem('Wolf Armor 1')"
+            desc: "Охраняется утопцами. Дроп: <b>Чертеж брони Волка</b>, реликтовый меч.", 
+            drop: "additem('Wolf Armor 1')",
+            id: "loc5"
+          },
+          { 
+            name: "Велен - Доска объявлений", 
+            category: "Квесты", 
+            region: "Велен",
+            x: 450, y: 550, 
+            desc: "Проверьте контракты. Дроп: <b>Контракт: Лесной зверь</b>.", 
+            drop: "additem('q104_contract_woodland')",
+            id: "loc6"
+          },
+          { 
+            name: "Скеллиге - Сад Фрейи", 
+            category: "Квесты", 
+            region: "Скеллиге",
+            x: 650, y: 350, 
+            desc: "Часть квеста 'Владыка Ундвика'. Дроп: <b>Ключ Фрейи</b>.", 
+            drop: "additem('q403_freya_key')",
+            id: "loc7"
+          },
+          { 
+            name: "Новиград - Таверна Лютика", 
+            category: "Гвинт", 
+            region: "Новиград",
+            x: 720, y: 220, 
+            desc: "Выиграйте матч в Гвинт. Дроп: <b>Карта Гвинта: Лютик</b>.", 
+            drop: "addgwintcards('gwint_card_dandelion')",
+            id: "loc8"
+          },
+          { 
+            name: "Белый Сад - Грифон", 
+            category: "Монстры", 
+            region: "Белый Сад",
+            x: 320, y: 420, 
+            desc: "Победите грифона. Дроп: <b>Трофей грифона</b>, 200 крон.", 
+            drop: "additem('mh101_griffin_trophy')",
+            id: "loc9"
+          },
+          { 
+            name: "Велен - Алхимическая лавка", 
+            category: "Крафтинг", 
+            region: "Велен",
+            x: 430, y: 520, 
+            desc: "Купите ингредиенты. Дроп: <b>Рецепт масла против некрофагов</b>.", 
+            drop: "additem('q104_necrofage_oil_recipe')",
+            id: "loc10"
           }
         ];
 
-        // Filter locations based on category and search query
+        // Фильтрация локаций
         const filteredLocations = locations.filter(loc => 
-          (selectedCategory === "All" || loc.category === selectedCategory) &&
-          (!searchQuery || loc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-           loc.desc.toLowerCase().includes(searchQuery.toLowerCase()))
+          (selectedCategories.includes(loc.category) || selectedCategories.length === 0) &&
+          (region === "Все" || loc.region === region) &&
+          (!searchQuery || 
+           loc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           loc.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           loc.drop.toLowerCase().includes(searchQuery.toLowerCase()))
         );
 
-        // Add markers
+        // Добавление меток
         filteredLocations.forEach(loc => {
-          L.marker([loc.y, loc.x])
+          const isFound = progress.includes(loc.id);
+          const marker = L.marker([loc.y, loc.x], {
+            icon: L.divIcon({
+              className: `custom-icon ${isFound ? 'opacity-50' : ''}`,
+              html: `<div style="background: ${isFound ? '#888' : '#e6c78a'}; width: 10px; height: 10px; border-radius: 50%;"></div>`
+            })
+          })
             .addTo(witcherMap)
-            .bindPopup(`<b>${loc.name}</b><br>${loc.desc}<br><i>Console: ${loc.drop}</i>`);
+            .bindPopup(`
+              <b>${loc.name}</b><br>
+              ${loc.desc}<br>
+              <i>Дроп: ${loc.drop}</i><br>
+              <button onclick="toggleFound('${loc.id}')" class="bg-yellow-600 text-gray-900 px-2 py-1 rounded mt-2">
+                ${isFound ? 'Снять отметку' : 'Отметить как найденное'}
+              </button>
+              <textarea id="note-${loc.id}" class="bg-gray-800 text-white p-2 mt-2 w-full" placeholder="Добавить заметку...">${localStorage.getItem(`note-${loc.id}`) || ''}</textarea>
+            `);
+          marker.on('popupopen', () => {
+            document.getElementById(`note-${loc.id}`).addEventListener('change', (e) => {
+              localStorage.setItem(`note-${loc.id}`, e.target.value);
+            });
+          });
         });
+
+        // Глобальная функция для отметки прогресса
+        window.toggleFound = (id) => {
+          setProgress(prev => {
+            const newProgress = prev.includes(id) 
+              ? prev.filter(p => p !== id) 
+              : [...prev, id];
+            localStorage.setItem('progress', JSON.stringify(newProgress));
+            return newProgress;
+          });
+          witcherMap.eachLayer(layer => {
+            if (layer.getPopup && layer.getPopup().getContent().includes(id)) {
+              layer.setIcon(L.divIcon({
+                className: `custom-icon ${newProgress.includes(id) ? 'opacity-50' : ''}`,
+                html: `<div style="background: ${newProgress.includes(id) ? '#888' : '#e6c78a'}; width: 10px; height: 10px; border-radius: 50%;"></div>`
+              }));
+            }
+          });
+        };
 
         setMap(witcherMap);
 
-        return () => witcherMap.remove(); // Cleanup on unmount
-      }, [selectedCategory, searchQuery]);
+        return () => witcherMap.remove(); // Очистка
+      }, [selectedCategories, searchQuery, region, progress]);
 
-      return <div id="map" class="w-full rounded-lg shadow-lg border-4 border-yellow-800"></div>;
+      return <div id="map" class="w-full rounded-lg shadow-lg border-4 border-yellow-800 ml-64"></div>;
     }
 
-    // Filter and Search Component
-    function FilterSearch({ setCategory, setSearchQuery }) {
-      const categories = ["All", "Treasure", "Quest", "Monster", "Gwent"];
-
+    // Компонент поиска
+    function FilterSearch({ setSearchQuery }) {
       return (
-        <div class="container mx-auto py-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div class="flex space-x-2">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                class="bg-yellow-600 text-gray-900 px-4 py-2 rounded hover:bg-yellow-700 transition"
-                onClick={() => setCategory(cat)}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        <div class="container mx-auto py-4">
           <input
             type="text"
-            placeholder="Search locations or drops..."
-            class="bg-gray-800 text-white p-2 rounded border-2 border-yellow-800 w-full md:w-1/3"
+            placeholder="Поиск локаций, дропов или описаний..."
+            class="bg-gray-800 text-white p-2 rounded border-2 border-yellow-800 w-full"
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       );
     }
 
-    // Tips Component
+    // Компонент советов
     function Tips() {
       const tips = [
         {
-          title: "Master Gwent",
-          desc: "Collect every Gwent card early. Visit inns in Novigrad and challenge NPCs. Key drop: <b>Gwent Card: Ciri</b> (addgwintcards('gwint_card_ciri'))."
+          title: "Мастер Гвинта",
+          desc: "Собирайте карты Гвинта с самого начала. Посещайте таверны в Новиграде. Дроп: <b>Карта Гвинта: Цири</b> (addgwintcards('gwint_card_ciri'))."
         },
         {
-          title: "Use Signs Effectively",
-          desc: "Igni burns groups of enemies, Quen protects in tough fights. Upgrade via skill tree. Drop: <b>Skill Point</b> (learnskill('sign_igni_1'))."
+          title: "Эффективные знаки",
+          desc: "Игни сжигает группы врагов, Квен защищает в сложных боях. Дроп: <b>Очко навыка</b> (learnskill('sign_igni_1'))."
         },
         {
-          title: "Explore Hidden Treasures",
-          desc: "Check notice boards for treasure hunts. Find <b>Griffin Armor Blueprint</b> in White Orchard (additem('Griffin Armor 1'))."
+          title: "Поиск сокровищ",
+          desc: "Проверяйте доски объявлений для квестов на сокровища. Найдите <b>Чертеж брони Грифона</b> в Белом Саду (additem('Griffin Armor 1'))."
         },
         {
-          title: "Crafting Bombs",
-          desc: "Craft Grapeshot bombs for crowd control. Find ingredients in bandit camps. Drop: <b>Grapeshot Recipe</b> (additem('q104_grapeshot_recipe'))."
+          title: "Крафтинг бомб",
+          desc: "Создавайте бомбы 'Картечь' для контроля толпы. Ингредиенты в лагерях бандитов. Дроп: <b>Рецепт Картечи</b> (additem('q104_grapeshot_recipe'))."
         },
         {
-          title: "Defeat Noonwraiths",
-          desc: "Use Yrden to trap noonwraiths. Drops: <b>Noonwraith Trophy</b> (additem('mh103_noonwraith_trophy'))."
+          title: "Борьба с полуденницами",
+          desc: "Используйте Ирден для ловушки. Дроп: <b>Трофей полуденницы</b> (additem('mh103_noonwraith_trophy'))."
+        },
+        {
+          title: "Квесты Скеллиге",
+          desc: "Пройдите 'Владыка Ундвика' для уникального лута. Дроп: <b>Ключ Фрейи</b> (additem('q403_freya_key'))."
+        },
+        {
+          title: "Гвинт с Лютиком",
+          desc: "Выиграйте матч в таверне Лютика. Дроп: <b>Карта Гвинта: Лютик</b> (addgwintcards('gwint_card_dandelion'))."
+        },
+        {
+          title: "Битва с грифоном",
+          desc: "Используйте арбалет и Аард против грифона. Дроп: <b>Трофей грифона</b> (additem('mh101_griffin_trophy'))."
         }
       ];
 
       return (
         <div class="container mx-auto py-8">
-          <h2 class="text-3xl font-bold text-yellow-600 mb-6 animate-scroll">Witcher 3 Lifehacks</h2>
+          <h2 class="text-3xl font-bold text-yellow-600 mb-6 animate-glow">Советы по Ведьмаку 3</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tips.map((tip, index) => (
               <div key={index} class="bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition border-2 border-yellow-800 animate-scroll">
@@ -249,57 +397,112 @@
       );
     }
 
-    // Locations Table Component
-    function LocationsTable({ selectedCategory, searchQuery }) {
+    // Компонент таблицы локаций
+    function LocationsTable({ selectedCategories, searchQuery, region, progress, setProgress }) {
       const locations = [
         { 
-          name: "White Orchard - Hidden Treasure", 
-          category: "Treasure", 
-          desc: "Chest near the mill. Drops: <b>Griffin Armor Blueprint</b>, 50 crowns.", 
-          drop: "additem('Griffin Armor 1')"
+          name: "Белый Сад - Скрытый сундук", 
+          category: "Сокровища", 
+          region: "Белый Сад",
+          desc: "Сундук у мельницы. Дроп: <b>Чертеж брони Грифона</b>, 50 крон.", 
+          drop: "additem('Griffin Armor 1')",
+          id: "loc1"
         },
         { 
-          name: "Kaer Morhen - Training Grounds", 
-          category: "Quest", 
-          desc: "Practice signs here. Drops: <b>Skill Point</b>, training notes.", 
-          drop: "learnskill('sign_quen_1')"
+          name: "Каэр Морхен - Тренировочная площадка", 
+          category: "Квесты", 
+          region: "Каэр Морхен",
+          desc: "Тренируйте знаки. Дроп: <b>Очко навыка</b>, заметки.", 
+          drop: "learnskill('sign_quen_1')",
+          id: "loc2"
         },
         { 
-          name: "Novigrad - Kingfisher Inn", 
-          category: "Gwent", 
-          desc: "Play Gwent with innkeeper. Drops: <b>Gwent Card: Ciri</b>.", 
-          drop: "addgwintcards('gwint_card_ciri')"
+          name: "Новиград - Таверна 'Кингфишер'", 
+          category: "Гвинт", 
+          region: "Новиград",
+          desc: "Сыграйте в Гвинт с трактирщиком. Дроп: <b>Карта Гвинта: Цири</b>.", 
+          drop: "addgwintcards('gwint_card_ciri')",
+          id: "loc3"
         },
         { 
-          name: "Velen - Bandit Camp", 
-          category: "Monster", 
-          desc: "Defeat bandits and a noonwraith. Drops: <b>Noonwraith Trophy</b>, 100 crowns.", 
-          drop: "additem('mh103_noonwraith_trophy')"
+          name: "Велен - Лагерь бандитов", 
+          category: "Монстры", 
+          region: "Велен",
+          desc: "Победите бандитов и полуденницу. Дроп: <b>Трофей полуденницы</b>, 100 крон.", 
+          drop: "additem('mh103_noonwraith_trophy')",
+          id: "loc4"
         },
         { 
-          name: "Skellige - Ancient Crypt", 
-          category: "Treasure", 
-          desc: "Guarded by drowners. Drops: <b>Wolf Armor Blueprint</b>, relic sword.", 
-          drop: "additem('Wolf Armor 1')"
+          name: "Скеллиге - Древний склеп", 
+          category: "Сокровища", 
+          region: "Скеллиге",
+          desc: "Охраняется утопцами. Дроп: <b>Чертеж брони Волка</b>, реликтовый меч.", 
+          drop: "additem('Wolf Armor 1')",
+          id: "loc5"
+        },
+        { 
+          name: "Велен - Доска объявлений", 
+          category: "Квесты", 
+          region: "Велен",
+          desc: "Проверьте контракты. Дроп: <b>Контракт: Лесной зверь</b>.", 
+          drop: "additem('q104_contract_woodland')",
+          id: "loc6"
+        },
+        { 
+          name: "Скеллиге - Сад Фрейи", 
+          category: "Квесты", 
+          region: "Скеллиге",
+          desc: "Часть квеста 'Владыка Ундвика'. Дроп: <b>Ключ Фрейи</b>.", 
+          drop: "additem('q403_freya_key')",
+          id: "loc7"
+        },
+        { 
+          name: "Новиград - Таверна Лютика", 
+          category: "Гвинт", 
+          region: "Новиград",
+          desc: "Выиграйте матч в Гвинт. Дроп: <b>Карта Гвинта: Лютик</b>.", 
+          drop: "addgwintcards('gwint_card_dandelion')",
+          id: "loc8"
+        },
+        { 
+          name: "Белый Сад - Грифон", 
+          category: "Монстры", 
+          region: "Белый Сад",
+          desc: "Победите грифона. Дроп: <b>Трофей грифона</b>, 200 крон.", 
+          drop: "additem('mh101_griffin_trophy')",
+          id: "loc9"
+        },
+        { 
+          name: "Велен - Алхимическая лавка", 
+          category: "Крафтинг", 
+          region: "Велен",
+          desc: "Купите ингредиенты. Дроп: <b>Рецепт масла против некрофагов</b>.", 
+          drop: "additem('q104_necrofage_oil_recipe')",
+          id: "loc10"
         }
       ];
 
       const filteredLocations = locations.filter(loc => 
-        (selectedCategory === "All" || loc.category === selectedCategory) &&
-        (!searchQuery || loc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-         loc.desc.toLowerCase().includes(searchQuery.toLowerCase()))
+        (selectedCategories.includes(loc.category) || selectedCategories.length === 0) &&
+        (region === "Все" || loc.region === region) &&
+        (!searchQuery || 
+         loc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+         loc.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         loc.drop.toLowerCase().includes(searchQuery.toLowerCase()))
       );
 
       return (
         <div class="container mx-auto py-8">
-          <h2 class="text-3xl font-bold text-yellow-600 mb-6 animate-scroll">Locations & Drops</h2>
+          <h2 class="text-3xl font-bold text-yellow-600 mb-6 animate-glow">Локации и дропы</h2>
           <table class="w-full bg-gray-800 rounded-lg shadow-lg border-2 border-yellow-800">
             <thead>
               <tr class="bg-yellow-800 text-gray-900">
-                <th class="p-4 text-left">Name</th>
-                <th class="p-4 text-left">Category</th>
-                <th class="p-4 text-left">Description</th>
-                <th class="p-4 text-left">Drop</th>
+                <th class="p-4 text-left">Название</th>
+                <th class="p-4 text-left">Категория</th>
+                <th class="p-4 text-left">Регион</th>
+                <th class="p-4 text-left">Описание</th>
+                <th class="p-4 text-left">Дроп</th>
+                <th class="p-4 text-left">Статус</th>
               </tr>
             </thead>
             <tbody>
@@ -307,8 +510,23 @@
                 <tr key={index} class="border-b border-yellow-800 hover:bg-gray-700 transition">
                   <td class="p-4">{loc.name}</td>
                   <td class="p-4">{loc.category}</td>
+                  <td class="p-4">{loc.region}</td>
                   <td class="p-4">{loc.desc}</td>
                   <td class="p-4">{loc.drop}</td>
+                  <td class="p-4">
+                    <button
+                      onClick={() => {
+                        const newProgress = progress.includes(loc.id)
+                          ? progress.filter(p => p !== loc.id)
+                          : [...progress, loc.id];
+                        localStorage.setItem('progress', JSON.stringify(newProgress));
+                        setProgress(newProgress);
+                      }}
+                      class="bg-yellow-600 text-gray-900 px-2 py-1 rounded"
+                    >
+                      {progress.includes(loc.id) ? 'Снять отметку' : 'Отметить как найденное'}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -317,36 +535,68 @@
       );
     }
 
-    // Main App Component
+    // Главный компонент
     function App() {
-      const [selectedCategory, setCategory] = useState("All");
+      const [selectedCategories, setSelectedCategories] = useState([]);
       const [searchQuery, setSearchQuery] = useState("");
+      const [region, setRegion] = useState("Все");
+      const [progress, setProgress] = useState(JSON.parse(localStorage.getItem('progress')) || []);
+
+      const categories = ["Сокровища", "Квесты", "Монстры", "Гвинт", "Крафтинг"];
+
+      const toggleCategory = (cat) => {
+        setSelectedCategories(prev => 
+          prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+        );
+      };
 
       return (
         <div>
           <Navbar />
-          <div id="home" class="container mx-auto py-16 text-center">
-            <h1 class="text-4xl md:text-6xl font-bold text-yellow-600 mb-4 animate-scroll">Master The Witcher 3</h1>
+          <Sidebar 
+            categories={categories} 
+            selectedCategories={selectedCategories} 
+            toggleCategory={toggleCategory} 
+            setRegion={setRegion} 
+          />
+          <div id="home" class="container mx-auto py-16 text-center ml-64">
+            <h1 class="text-4xl md:text-6xl font-bold text-yellow-600 mb-4 animate-glow">
+              Покори Ведьмака 3
+            </h1>
             <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
-              Your ultimate guide to conquering The Witcher 3: Wild Hunt. Explore the interactive map, discover lifehacks, and find all drops to become a legendary witcher!
+              Ваш лучший гид по миру Ведьмака 3: Дикая Охота. Исследуйте интерактивную карту, отслеживайте дропы, добавляйте заметки и станьте легендарным ведьмаком!
             </p>
           </div>
-          <div id="map" class="container mx-auto py-8">
-            <h2 class="text-3xl font-bold text-yellow-600 mb-6 text-center animate-scroll">Interactive Witcher Map</h2>
-            <FilterSearch setCategory={setCategory} setSearchQuery={setSearchQuery} />
-            <WitcherMap selectedCategory={selectedCategory} searchQuery={searchQuery} />
+          <div id="map" class="container mx-auto py-8 ml-64">
+            <h2 class="text-3xl font-bold text-yellow-600 mb-6 text-center animate-glow">
+              Интерактивная карта Ведьмака 3
+            </h2>
+            <FilterSearch setSearchQuery={setSearchQuery} />
+            <WitcherMap 
+              selectedCategories={selectedCategories} 
+              searchQuery={searchQuery} 
+              region={region}
+              progress={progress}
+              setProgress={setProgress}
+            />
           </div>
-          <div id="tips">
+          <div id="tips" class="ml-64">
             <Tips />
           </div>
-          <div id="locations">
-            <LocationsTable selectedCategory={selectedCategory} searchQuery={searchQuery} />
+          <div id="locations" class="ml-64">
+            <LocationsTable 
+              selectedCategories={selectedCategories} 
+              searchQuery={searchQuery} 
+              region={region}
+              progress={progress}
+              setProgress={setProgress}
+            />
           </div>
         </div>
       );
     }
 
-    // Render App
+    // Рендеринг приложения
     ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
