@@ -1,263 +1,353 @@
-<!DOCTYPE html>
-<html lang="ru">
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>MosyTube — видеохостинг</title>
-<style>
-  /* Оставим стили из предыдущего варианта */
-  body {
-    margin: 0; font-family: Arial, sans-serif; background: #111; color: #eee;
-    display: flex; flex-direction: column; min-height: 100vh;
-  }
-  header {
-    background: #222; padding: 15px 30px; display: flex; align-items: center; justify-content: space-between;
-  }
-  h1 { margin: 0; font-weight: 700; font-size: 24px; color: #58a6ff; user-select: none; }
-  #greeting { margin-left: 15px; font-weight: 500; color: #aaa; }
-  #search-input {
-    flex-grow: 1; max-width: 400px; padding: 8px 15px; border-radius: 20px;
-    border: none; font-size: 16px; outline: none;
-  }
-  #upload-btn {
-    background: #238636; border: none; color: white; padding: 10px 20px; border-radius: 20px;
-    font-weight: 700; cursor: pointer; margin-left: 20px;
-  }
-  #upload-btn:hover { background: #2ea043; }
-  main {
-    flex-grow: 1; padding: 20px 30px; display: grid; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); gap: 20px;
-    background: #0d1117; overflow-y: auto;
-  }
-  .video-card {
-    background: #22272e; border-radius: 12px; overflow: hidden; cursor: pointer; position: relative;
-    box-shadow: 0 0 5px #000;
-    display: flex; flex-direction: column;
-  }
-  .video-card:hover { box-shadow: 0 0 12px #58a6ff; }
-  video {
-    width: 100%; height: 160px; object-fit: cover; pointer-events: none;
-  }
-  .video-info {
-    padding: 10px 15px; flex-grow: 1; display: flex; flex-direction: column;
-  }
-  .video-title {
-    font-weight: 700; color: #58a6ff; font-size: 16px; margin: 0 0 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .video-desc {
-    color: #bbb; font-size: 14px; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; display: -webkit-box;
-    -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-  }
-  .delete-btn {
-    position: absolute; top: 8px; right: 8px; background: #f85149; border: none; color: white; padding: 5px 9px;
-    border-radius: 8px; font-weight: 700; cursor: pointer; user-select: none; opacity: 0.85;
-    transition: opacity 0.3s;
-  }
-  .delete-btn:hover { opacity: 1; }
-  /* Модалка */
-  #video-modal {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9);
-    justify-content: center; align-items: center; z-index: 9999;
-  }
-  #video-modal.active { display: flex; }
-  #modal-video {
-    max-width: 90vw; 
-    max-height: 90vh; 
-    width: auto;
-    height: auto;
-    background: black;
-    box-shadow: 0 0 20px #58a6ff;
-    border-radius: 12px;
-  }
-  #modal-close {
-    position: fixed; top: 20px; right: 30px; font-size: 36px; color: #58a6ff; background: transparent; border: none;
-    cursor: pointer; user-select: none;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Witcher 3 Ultimate Guide</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map { height: 600px; background: #2d1e12; } /* Parchment-like background */
+    body { 
+      background: url('https://images.unsplash.com/photo-1518709268805-4e9042af592c') no-repeat center center fixed; 
+      background-size: cover; 
+      font-family: 'Cinzel', serif; /* Witcher-style font */
+    }
+    .leaflet-popup-content-wrapper { 
+      background: #3c2f1e; 
+      color: #e6c78a; 
+      font-family: 'Cinzel', serif; 
+      padding: 10px; 
+    }
+    .leaflet-popup-tip { background: #3c2f1e; }
+    .animate-scroll { 
+      animation: scroll 0.5s ease-in-out; 
+    }
+    @keyframes scroll {
+      0% { transform: translateY(-10px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+  <!-- Witcher-style font -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="bg-gray-900 text-white">
+  <div id="root"></div>
 
-<header>
-  <div style="display:flex; align-items:center;">
-    <h1>MosyTube</h1>
-    <div id="greeting">Доброе утро, Никита!</div>
-  </div>
-  <input type="search" id="search-input" placeholder="Поиск видео..." aria-label="Поиск видео" />
-  <button id="upload-btn" aria-haspopup="dialog">Загрузить видео</button>
-</header>
+  <!-- React and ReactDOM -->
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <!-- Babel for JSX -->
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.5/babel.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<main id="video-list" aria-live="polite" aria-label="Список видео">
-  <!-- Видео вставятся сюда -->
-</main>
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-<!-- Модальное окно -->
-<div id="video-modal" role="dialog" aria-modal="true" tabindex="-1">
-  <button id="modal-close" aria-label="Закрыть видео">&times;</button>
-  <video id="modal-video" controls></video>
-</div>
-
-<!-- Скрытая форма загрузки -->
-<input type="file" id="file-input" accept="video/*" style="display:none" />
-
-<script>
-  const API_URL = 'http://localhost:3000'; // Адрес сервера
-
-  const videoList = document.getElementById('video-list');
-  const searchInput = document.getElementById('search-input');
-  const uploadBtn = document.getElementById('upload-btn');
-  const fileInput = document.getElementById('file-input');
-
-  const videoModal = document.getElementById('video-modal');
-  const modalVideo = document.getElementById('modal-video');
-  const modalClose = document.getElementById('modal-close');
-
-  let videos = [];
-
-  // Получить список видео с сервера
-  async function fetchVideos() {
-    try {
-      const res = await fetch(API_URL + '/videos');
-      if (!res.ok) throw new Error('Ошибка загрузки видео');
-      videos = await res.json();
-      renderVideos(videos);
-    } catch (e) {
-      alert(e.message);
+    // Navigation Component
+    function Navbar() {
+      return (
+        <nav class="bg-gray-800 p-4 shadow-lg">
+          <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-yellow-600">Witcher 3 Ultimate Guide</h1>
+            <div class="space-x-4">
+              <a href="#home" class="hover:text-yellow-600">Home</a>
+              <a href="#map" class="hover:text-yellow-600">Map</a>
+              <a href="#tips" class="hover:text-yellow-600">Tips</a>
+              <a href="#locations" class="hover:text-yellow-600">Locations</a>
+            </div>
+          </div>
+        </nav>
+      );
     }
-  }
 
-  // Отобразить список видео
-  function renderVideos(list) {
-    videoList.innerHTML = '';
-    if (list.length === 0) {
-      videoList.innerHTML = '<p style="color:#777; grid-column:1/-1; text-align:center;">Видео не найдены</p>';
-      return;
-    }
-    list.forEach(video => {
-      const videoUrl = `${API_URL}/videos/file/${video.filename}`;
-      const card = document.createElement('div');
-      card.className = 'video-card';
-      card.tabIndex = 0;
-      card.setAttribute('role', 'button');
-      card.setAttribute('aria-label', `Видео: ${video.title || 'без названия'}`);
+    // Map Component
+    function WitcherMap({ selectedCategory, searchQuery }) {
+      const [map, setMap] = useState(null);
 
-      card.innerHTML = `
-        <video muted preload="metadata" src="${videoUrl}"></video>
-        <div class="video-info">
-          <h3 class="video-title">${video.title || 'Без названия'}</h3>
-          <p class="video-desc">${video.desc || ''}</p>
-        </div>
-        <button class="delete-btn" aria-label="Удалить видео ${video.title || 'без названия'}" title="Удалить">×</button>
-      `;
+      useEffect(() => {
+        // Initialize map
+        const witcherMap = L.map('map', { 
+          crs: L.CRS.Simple, // Custom coordinate system for game map
+          minZoom: -1,
+          maxZoom: 3
+        });
 
-      card.querySelector('.delete-btn').addEventListener('click', async (e) => {
-        e.stopPropagation();
-        if (confirm(`Удалить видео "${video.title || 'без названия'}"?`)) {
-          try {
-            const res = await fetch(`${API_URL}/videos/${video.id}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error('Ошибка удаления видео');
-            await fetchVideos();
-            alert('Видео удалено.');
-          } catch (err) {
-            alert('Ошибка удаления: ' + err.message);
+        // Witcher 3 map image (replace with your own high-quality map URL)
+        const mapUrl = 'https://www.witcher3map.com/img/maps/full-map.jpg'; // Full Witcher 3 map
+        const bounds = [[0, 0], [2000, 2000]]; // Adjust based on image size
+        L.imageOverlay(mapUrl, bounds).addTo(witcherMap);
+        witcherMap.fitBounds(bounds);
+
+        // Locations with drops (based on Witcher 3 data)
+        const locations = [
+          { 
+            name: "White Orchard - Hidden Treasure", 
+            category: "Treasure", 
+            x: 300, y: 400, 
+            desc: "Chest near the mill. Drops: <b>Griffin Armor Blueprint</b>, 50 crowns.", 
+            drop: "additem('Griffin Armor 1')"
+          },
+          { 
+            name: "Kaer Morhen - Training Grounds", 
+            category: "Quest", 
+            x: 500, y: 600, 
+            desc: "Practice signs here. Drops: <b>Skill Point</b>, training notes.", 
+            drop: "learnskill('sign_quen_1')"
+          },
+          { 
+            name: "Novigrad - Kingfisher Inn", 
+            category: "Gwent", 
+            x: 700, y: 200, 
+            desc: "Play Gwent with innkeeper. Drops: <b>Gwent Card: Ciri</b>.", 
+            drop: "addgwintcards('gwint_card_ciri')"
+          },
+          { 
+            name: "Velen - Bandit Camp", 
+            category: "Monster", 
+            x: 400, y: 500, 
+            desc: "Defeat bandits and a noonwraith. Drops: <b>Noonwraith Trophy</b>, 100 crowns.", 
+            drop: "additem('mh103_noonwraith_trophy')"
+          },
+          { 
+            name: "Skellige - Ancient Crypt", 
+            category: "Treasure", 
+            x: 600, y: 300, 
+            desc: "Guarded by drowners. Drops: <b>Wolf Armor Blueprint</b>, relic sword.", 
+            drop: "additem('Wolf Armor 1')"
           }
+        ];
+
+        // Filter locations based on category and search query
+        const filteredLocations = locations.filter(loc => 
+          (selectedCategory === "All" || loc.category === selectedCategory) &&
+          (!searchQuery || loc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           loc.desc.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+
+        // Add markers
+        filteredLocations.forEach(loc => {
+          L.marker([loc.y, loc.x])
+            .addTo(witcherMap)
+            .bindPopup(`<b>${loc.name}</b><br>${loc.desc}<br><i>Console: ${loc.drop}</i>`);
+        });
+
+        setMap(witcherMap);
+
+        return () => witcherMap.remove(); // Cleanup on unmount
+      }, [selectedCategory, searchQuery]);
+
+      return <div id="map" class="w-full rounded-lg shadow-lg border-4 border-yellow-800"></div>;
+    }
+
+    // Filter and Search Component
+    function FilterSearch({ setCategory, setSearchQuery }) {
+      const categories = ["All", "Treasure", "Quest", "Monster", "Gwent"];
+
+      return (
+        <div class="container mx-auto py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div class="flex space-x-2">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                class="bg-yellow-600 text-gray-900 px-4 py-2 rounded hover:bg-yellow-700 transition"
+                onClick={() => setCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <input
+            type="text"
+            placeholder="Search locations or drops..."
+            class="bg-gray-800 text-white p-2 rounded border-2 border-yellow-800 w-full md:w-1/3"
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    // Tips Component
+    function Tips() {
+      const tips = [
+        {
+          title: "Master Gwent",
+          desc: "Collect every Gwent card early. Visit inns in Novigrad and challenge NPCs. Key drop: <b>Gwent Card: Ciri</b> (addgwintcards('gwint_card_ciri'))."
+        },
+        {
+          title: "Use Signs Effectively",
+          desc: "Igni burns groups of enemies, Quen protects in tough fights. Upgrade via skill tree. Drop: <b>Skill Point</b> (learnskill('sign_igni_1'))."
+        },
+        {
+          title: "Explore Hidden Treasures",
+          desc: "Check notice boards for treasure hunts. Find <b>Griffin Armor Blueprint</b> in White Orchard (additem('Griffin Armor 1'))."
+        },
+        {
+          title: "Crafting Bombs",
+          desc: "Craft Grapeshot bombs for crowd control. Find ingredients in bandit camps. Drop: <b>Grapeshot Recipe</b> (additem('q104_grapeshot_recipe'))."
+        },
+        {
+          title: "Defeat Noonwraiths",
+          desc: "Use Yrden to trap noonwraiths. Drops: <b>Noonwraith Trophy</b> (additem('mh103_noonwraith_trophy'))."
         }
-      });
+      ];
 
-      card.addEventListener('click', () => {
-        openModal(videoUrl);
-      });
-      card.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          openModal(videoUrl);
+      return (
+        <div class="container mx-auto py-8">
+          <h2 class="text-3xl font-bold text-yellow-600 mb-6 animate-scroll">Witcher 3 Lifehacks</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tips.map((tip, index) => (
+              <div key={index} class="bg-gray-800 p-6 rounded-lg shadow-lg hover:shadow-xl transition border-2 border-yellow-800 animate-scroll">
+                <h3 class="text-xl font-semibold text-yellow-600">{tip.title}</h3>
+                <p class="mt-2">{tip.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Locations Table Component
+    function LocationsTable({ selectedCategory, searchQuery }) {
+      const locations = [
+        { 
+          name: "White Orchard - Hidden Treasure", 
+          category: "Treasure", 
+          desc: "Chest near the mill. Drops: <b>Griffin Armor Blueprint</b>, 50 crowns.", 
+          drop: "additem('Griffin Armor 1')"
+        },
+        { 
+          name: "Kaer Morhen - Training Grounds", 
+          category: "Quest", 
+          desc: "Practice signs here. Drops: <b>Skill Point</b>, training notes.", 
+          drop: "learnskill('sign_quen_1')"
+        },
+        { 
+          name: "Novigrad - Kingfisher Inn", 
+          category: "Gwent", 
+          desc: "Play Gwent with innkeeper. Drops: <b>Gwent Card: Ciri</b>.", 
+          drop: "addgwintcards('gwint_card_ciri')"
+        },
+        { 
+          name: "Velen - Bandit Camp", 
+          category: "Monster", 
+          desc: "Defeat bandits and a noonwraith. Drops: <b>Noonwraith Trophy</b>, 100 crowns.", 
+          drop: "additem('mh103_noonwraith_trophy')"
+        },
+        { 
+          name: "Skellige - Ancient Crypt", 
+          category: "Treasure", 
+          desc: "Guarded by drowners. Drops: <b>Wolf Armor Blueprint</b>, relic sword.", 
+          drop: "additem('Wolf Armor 1')"
         }
-      });
+      ];
 
-      videoList.appendChild(card);
-    });
-  }
+      const filteredLocations = locations.filter(loc => 
+        (selectedCategory === "All" || loc.category === selectedCategory) &&
+        (!searchQuery || loc.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+         loc.desc.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
 
-  // Модалка
-  function openModal(videoUrl) {
-    modalVideo.src = videoUrl;
-    videoModal.classList.add('active');
-    modalVideo.play();
-    videoModal.focus();
-  }
-
-  function closeModal() {
-    modalVideo.pause();
-    modalVideo.src = '';
-    videoModal.classList.remove('active');
-  }
-
-  modalClose.addEventListener('click', closeModal);
-  videoModal.addEventListener('click', (e) => {
-    if (e.target === videoModal) closeModal();
-  });
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && videoModal.classList.contains('active')) {
-      closeModal();
-    }
-  });
-
-  // Загрузка видео
-  uploadBtn.addEventListener('click', () => {
-    fileInput.click();
-  });
-
-  fileInput.addEventListener('change', async () => {
-    if (!fileInput.files.length) return;
-
-    const file = fileInput.files[0];
-    if (!file.type.startsWith('video/')) {
-      alert('Пожалуйста, выберите видеофайл.');
-      fileInput.value = '';
-      return;
+      return (
+        <div class="container mx-auto py-8">
+          <h2 class="text-3xl font-bold text-yellow-600 mb-6 animate-scroll">Locations & Drops</h2>
+          <table class="w-full bg-gray-800 rounded-lg shadow-lg border-2 border-yellow-800">
+            <thead>
+              <tr class="bg-yellow-800 text-gray-900">
+                <th class="p-4 text-left">Name</th>
+                <th class="p-4 text-left">Category</th>
+                <th class="p-4 text-left">Description</th>
+                <th class="p-4 text-left">Drop</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLocations.map((loc, index) => (
+                <tr key={index} class="border-b border-yellow-800 hover:bg-gray-700 transition">
+                  <td class="p-4">{loc.name}</td>
+                  <td class="p-4">{loc.category}</td>
+                  <td class="p-4">{loc.desc}</td>
+                  <td class="p-4">{loc.drop}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
     }
 
-    if (file.size > 1024 * 1024 * 1024) { // 1 ГБ лимит
-      alert('Максимальный размер видео: 1 ГБ');
-      fileInput.value = '';
-      return;
+    // Main App Component
+    function App() {
+      const [selectedCategory, setCategory] = useState("All");
+      const [searchQuery, setSearchQuery] = useState("");
+
+      return (
+        <div>
+          <Navbar />
+          <div id="home" class="container mx-auto py-16 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold text-yellow-600 mb-4 animate-scroll">Master The Witcher 3</h1>
+            <p class="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+              Your ultimate guide to conquering The Witcher 3: Wild Hunt. Explore the interactive map, discover lifehacks, and find all drops to become a legendary witcher!
+            </p>
+          </div>
+          <div id="map" class="container mx-auto py-8">
+            <h2 class="text-3xl font-bold text-yellow-600 mb-6 text-center animate-scroll">Interactive Witcher Map</h2>
+            <FilterSearch setCategory={setCategory} setSearchQuery={setSearchQuery} />
+            <WitcherMap selectedCategory={selectedCategory} searchQuery={searchQuery} />
+          </div>
+          <div id="tips">
+            <Tips />
+          </div>
+          <div id="locations">
+            <LocationsTable selectedCategory={selectedCategory} searchQuery={searchQuery} />
+          </div>
+        </div>
+      );
     }
 
-    const title = prompt('Введите название видео:', file.name) || 'Без названия';
-    const desc = prompt('Введите описание видео (необязательно):', '') || '';
-
-    try {
-      const formData = new FormData();
-      formData.append('video', file);
-      formData.append('title', title);
-      formData.append('desc', desc);
-
-      const res = await fetch(API_URL + '/videos', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!res.ok) throw new Error('Ошибка при загрузке видео');
-      await fetchVideos();
-      alert('Видео успешно загружено и сохранено.');
-    } catch (err) {
-      alert(err.message);
-    }
-    fileInput.value = '';
-  });
-
-  // Поиск видео
-  searchInput.addEventListener('input', () => {
-    const q = searchInput.value.toLowerCase();
-    const filtered = videos.filter(v =>
-      (v.title && v.title.toLowerCase().includes(q)) ||
-      (v.desc && v.desc.toLowerCase().includes(q))
-    );
-    renderVideos(filtered);
-  });
-
-  // Инициализация
-  fetchVideos();
-</script>
-
+    // Render App
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
 </body>
 </html>
